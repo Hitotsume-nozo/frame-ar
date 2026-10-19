@@ -1,0 +1,37 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.coverage.*
+
+# Ephemeral Agent logs & internal worktrees
+.agents/teamwork/
+
+# Runtime state & local caches
+.frame/
+working/
+
+# Build and Distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Environments & Secret Credentials
+.env
+.venv
+env/
+venv/
+*.pem
+*.key
+kaggle.json
+.kaggle/
+
+# Operating System Files
+.DS_Store
+Thumbs.db

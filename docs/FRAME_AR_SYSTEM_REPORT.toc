@@ -1,0 +1,29 @@
+\contentsline {section}{\numberline {1}System Overview \& Physical Hardware Constraints}{3}{section.1}%
+\contentsline {section}{\numberline {2}The Three-Tier Execution Architecture}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Tier 1: Host Local Sandbox (Low Compute)}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Tier 2: Remote Kaggle API Engine (Medium-High Compute)}{3}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Tier 3: Manual Execution System Requirement (Massive Compute)}{4}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Tiered Symbolic-Numeric Verification Engine (L0, L1, L2)}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Dimensional Information Compression Operators}{4}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}The Three Verification Levels}{4}{subsection.3.2}%
+\contentsline {section}{\numberline {4}Anti-Reward Hacking \& Adversarial Defense Architecture}{5}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Vulnerability Matrix \& Exploit Vectors}{5}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Hardened Defense Countermeasures}{5}{subsection.4.2}%
+\contentsline {section}{\numberline {5}Reward Scope \& Incentive Surface Visualization}{5}{section.5}%
+\contentsline {section}{\numberline {6}Realistic Mathematical Execution Guarantees}{6}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Honest Optimization Analysis: The Edge of Stability (EoS)}{6}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Certified Pre-Flight Numerical Sanity Gates}{6}{subsection.6.2}%
+\contentsline {section}{\numberline {7}Concrete Research Brain Specification}{6}{section.7}%
+\contentsline {subsection}{\numberline {7.1}MCTS Formulation \& Exploration Constant $c$}{6}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Structural Falsification Memory}{6}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Recombination Operator Legality Grammar ($C = A \oplus B \oplus D$)}{7}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Search-Level Accounting \& Stage Observability}{7}{subsection.7.4}%
+\contentsline {section}{\numberline {8}Explicit Experimental Design Stage}{7}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Positioning in the Discovery Loop}{7}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}The Two Statistical Levers: Variance Reduction \& Two-Stage Screening}{7}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Quad-Baseline Control Protocol}{8}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Method-to-Implementation Alignment Verification}{8}{subsection.8.4}%
+\contentsline {section}{\numberline {9}Production Data Contracts \& Empirical Test Results}{8}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Empirical Test Results (Pytest 9.1.1 on Host)}{8}{subsection.9.1}%
+\contentsline {section}{\numberline {10}Repository Map \& Documentation Sitemap}{8}{section.10}%
+\contentsline {section}{\numberline {11}Conclusion}{8}{section.11}%
