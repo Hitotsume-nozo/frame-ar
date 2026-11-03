@@ -19,6 +19,7 @@ working/
 # Build and Distribution
 build/
 dist/
+archives/
 *.egg-info/
 .eggs/
 

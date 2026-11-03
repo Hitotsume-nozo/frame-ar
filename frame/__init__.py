@@ -1,3 +1,3 @@
-"""FRAME-AR: Foundation for Rigorous Autonomous & Mathematical Experimentation — Auto-Research."""
+"""FRAME-AR v2.5: Tamper-Proof Autonomous Research & Statistical Verification Engine."""
 
-__version__ = "0.1.0"
+__version__ = "2.5.0"

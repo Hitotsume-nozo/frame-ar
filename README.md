@@ -1,370 +1,448 @@
 # FRAME-AR: Foundation for Rigorous Autonomous & Mathematical Experimentation — Auto-Research
 
+[![Version: 2.5.0 (Stable)](https://img.shields.io/badge/version-2.5.0%20(Stable)-brightgreen.svg)](CHANGELOG.md)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![PyTorch 2.0+](https://img.shields.io/badge/pytorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
-[![Tests Passing](https://img.shields.io/badge/tests-793%20passed-brightgreen.svg)](tests/)
-[![FDR Control](https://img.shields.io/badge/FDR%20Control-LORD%203%20Streaming-blueviolet.svg)](#4-rigorous-statistical-superiority--streaming-lord-3-fdr)
-[![Cryptographic CAS](https://img.shields.io/badge/Evidence%20Chain-Merkle%20CAS%20%28RFC%208785%29-orange.svg)](#10-cryptographic-merkle-cas-evidence-binding)
+[![Tests: 29 Passed (100%)](https://img.shields.io/badge/tests-29%20passed%20(100%25)-brightgreen.svg)](tests/)
+[![FDR Control: LORD-3 Streaming](https://img.shields.io/badge/FDR%20Control-LORD%203%20%28Riemann%20Zeta%29-blueviolet.svg)](#online-fdr-control-streaming-lord-3)
+[![Sandboxed: CPython Audit Hook](https://img.shields.io/badge/Sandbox-CPython%20Audit%20Hook-orange.svg)](#out-of-process-cpython-audit-sandbox)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **FRAME-AR** is an autonomous scientific discovery and empirical auto-research platform. It pairs **Agentic Swarm Thinking & Recursive Evolutionary MCTS Search** (inspired by AlphaEvolve and AI-Scientist v2) with a **Production-Grade Mathematical & Statistical Verification Engine** (tiered symbolic proofs, adversarial red-teaming, streaming false discovery rate control, edge-indexed residual routing, and cryptographic claim-evidence binding).
+> **FRAME-AR v2.5** is an out-of-process, tamper-proof autonomous scientific discovery and empirical auto-research engine. It pairs **Context-Isolated Evolutionary Swarms & Monte Carlo Tree Search (MCTS)** with a **Production-Grade Statistical Verification Funnel** (Common Random Numbers pilot screening, `rliable` Interquartile Mean bootstrap testing, streaming LORD-3 false discovery rate control, open policy expressivity, and sealed cryptographic vault holdout audits).
 
 ---
 
 ## 📑 Table of Contents
 
-- [Core Philosophy & Architecture](#-core-philosophy--architecture)
-- [System Architecture Diagram](#-system-architecture-diagram)
-- [The 10 Distinctive Subsystems](#-the-10-distinctive-subsystems)
-  - [1. Cognitive Swarm & Information Governor](#1-cognitive-swarm--information-governor)
-  - [2. Dual-Key Novelty Contract](#2-dual-key-novelty-contract)
-  - [3. Tiered Symbolic-Numeric Math Engine (L0–L2)](#3-tiered-symbolic-numeric-math-engine-l0l2)
-  - [4. Rigorous Statistical Superiority & Streaming LORD 3 FDR](#4-rigorous-statistical-superiority--streaming-lord-3-fdr)
-  - [5. Edge-Indexed FDR & The Blend Edge Protocol](#5-edge-indexed-fdr--the-blend-edge-protocol)
-  - [6. Adversarial Red-Team Suite & Anti-Reward Hacking](#6-adversarial-red-team-suite--anti-reward-hacking)
-  - [7. Numerical TAPAScore Formulation](#7-numerical-tapascore-formulation)
-  - [8. Three-Tier Compute Dispatch Router](#8-three-tier-compute-dispatch-router)
-  - [9. Persistent Dual-Sink Epistemic Ledgers](#9-persistent-dual-sink-epistemic-ledgers)
-  - [10. Cryptographic Merkle CAS Evidence Binding](#10-cryptographic-merkle-cas-evidence-binding)
+- [Core Philosophy: Strict Separation of Powers](#-core-philosophy-strict-separation-of-powers)
+- [System Architecture](#-system-architecture)
+- [The 5-Phase Research Lifecycle](#-the-5-phase-research-lifecycle)
+- [The 3-Gate Evaluation Funnel](#-the-3-gate-evaluation-funnel)
+- [Key Upgrades in FRAME-AR v2.5 (Stable)](#-key-upgrades-in-frame-ar-v25-stable)
+- [Evolution & Overhauls: v1 to v2.5](#-evolution--overhauls-v1-to-v25)
+- [Quickstart: Running Basic Toy Runs](#-quickstart-running-basic-toy-runs)
+  - [Installation](#1-installation)
+  - [Automated Toy Run with Bash Hypervisor](#2-automated-toy-run-with-bash-hypervisor)
+  - [Interactive Dual-Pane Monitoring & Injection](#3-interactive-dual-pane-monitoring--injection)
+  - [Manual Step-by-Step CLI Walkthrough](#4-manual-step-by-step-cli-walkthrough)
+- [CLI Reference](#-cli-reference)
 - [Repository Layout](#-repository-layout)
-- [Installation & Setup](#-installation--setup)
-- [CLI Reference & Usage](#-cli-reference--usage)
-- [Empirical Verification Matrix (793 Tests)](#-empirical-verification-matrix-793-tests)
-- [Master Documentation & Publications](#-master-documentation--publications)
+- [Verification & Testing](#-verification--testing)
+- [Legacy v1 Archive](#-legacy-v1-archive)
 - [License](#-license)
 
 ---
 
-## 🏛️ Core Philosophy & Architecture
+## 🏛️ Core Philosophy: Strict Separation of Powers
 
-Modern automated machine learning (AutoML) tools routinely suffer from three structural pathologies:
-1. **The Epistemic Closed-World Trap**: Mutating code purely via internal LLM priors without grounding against external scientific literature causes agents to hallucinate repetitive, degenerate failure modes.
-2. **Pseudoreplication & P-Hacking**: Running dozens of empirical trials and picking the peak score on static validation splits guarantees false discoveries through selection bias ($p$-hacking) and rank barriers.
-3. **The Blend Conflation Illusion**: Declaring ensemble/stacking layers as "discoveries" merely because they outperform a naive baseline, despite adding massive parameter bloat with zero statistically verifiable advantage over the best single constituent model.
+Autonomous machine learning agents routinely succumb to three fatal failure modes:
+1. **Agentic Drift & Snooping**: When LLM workers share an in-process runtime with the test harness, they inspect holdout splits, reverse-engineer synthetic evaluators, or leak global statistics into feature scaling.
+2. **Pseudoreplication & P-Hacking**: Running dozens of empirical trials and declaring victory on peak evaluation scores leads to selection bias and false positive discoveries.
+3. **The Blend Conflation Illusion**: Ensembles or model stacking layers are hailed as breakthroughs merely because they outperform a naive baseline, despite offering zero statistically significant advantage over the best single constituent model.
 
-**FRAME-AR solves these pathologies from first principles**:
-- **Closed-Loop Recursive Thinking**: Failures extract post-mortem error telemetry that translates directly into targeted scientific queries, re-entering Phase 1 literature ingestion.
-- **Online False Discovery Rate (FDR) Control**: Streaming **LORD 3** dynamically allocates significance thresholds $\alpha_t$, guaranteeing $\mathbb{E}[\text{FDR}_{\mathcal{T}}] \le \alpha$ for arbitrary stopping times $\mathcal{T}$.
-- **Edge-Indexed Residual Routing**: Hypotheses are modeled as a directed acyclic graph (DAG) where every edge carries an independent two-stage statistical test with pre-registered margins ($\epsilon_{\text{ROPE}}$).
-- **The Blend Edge Protocol**: An ensemble cannot be certified without passing a two-stage screen against the *incumbent best single model*.
-- **Cryptographic Provenance**: Every empirical claim links to an unbroken SHA-256 Merkle content-addressable storage (CAS) root CID under RFC 8785 Canonical JSON.
-
----
-
-## 🔄 System Architecture Diagram
+**FRAME-AR enforces a strict Separation of Powers**:
+- **The Evaluation Environment (`frame` CLI / `frame-orchestrate.sh`)**: Authoritative, immutable, and out-of-process. Controls data partitioning, timing constraints, statistical testing, and tree state.
+- **The Research Agent (`candidate.py`)**: Stateless and isolated. The agent receives only a task specification (`BRIEF.md`) and a parent candidate file inside an ephemeral jail (`/tmp/frame_jail_*`). Candidate code **never imports `frame.*`**, never sees test holdouts, and runs under an unbypassable CPython security audit hook.
 
 ```
-   ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-   │                                                                                         │
-   │  ┌──────────────────────────────────────────────────────────┐                           │
-   └─►│  PHASE 1: TARGETED SWARM THINKING & EXTERNAL INGESTION   │                           │
-      │  • Ingest domain profile & theoretical noise floor       │                           │
-      │  • Active web mining for external SOTA & failure cures   │                           │
-      │  • Information Governor evidence audit G(s) >= 0.40      │                           │
-      │  • Exploration entropy check H_phase1 >= 0.75 ln(4)      │                           │
-      │  • Spawn orthogonal swarm specialist lanes (A ⊕ B ⊕ D ⊕ F)│                          │
-      └────────────────────────────┬─────────────────────────────┘                           │
-                                   │ Swarm proposals with branch provenance                  │
-                                   ▼                                                         │
-      ┌──────────────────────────────────────────────────────────┐                           │
-      │    PHASE 2: COMPOSITIONAL SYNTHESIS & PRE-FLIGHT PROOFS  │                           │
-      │  • Structural AST Falsification Memory (O(1) hard block) │                           │
-      │  • Branch-isolated semantic memory & rebuttal filter     │                           │
-      │  • Recombination Legality Grammar (A ⊕ B ⊕ D typing)     │                           │
-      │  • Dual-Key Novelty Contract (d_lit > 0.15, d_func > 0.10)│                          │
-      │  • Tiered Math Verification (L0 SymPy, L1 IBP, L2 IBnB)  │                           │
-      └────────────────────────────┬─────────────────────────────┘                           │
-                                   │ Cleared for compute                                     │
-                                   ▼                                                         │
-      ┌──────────────────────────────────────────────────────────┐                           │
-      │    PHASE 3: MULTI-TIER EMPIRICAL EXECUTION & ORACLES     │                           │
-      │  • 5-Fold Cross-Validation with strict per-fold hygiene  │                           │
-      │  • Common Random Numbers (CRN) paired-seed testing (k>=5)│                           │
-      │  • Two-Stage Screening (k=3 futility -> k* confirmatory) │                           │
-      │  • Edge-Indexed FDR under streaming LORD 3 (alpha_t > 0) │                           │
-      │  • The Blend Edge Protocol (screen blends vs incumbent)  │                           │
-      │  • Adversarial Red-Team Gate (5 null models, variance)   │                           │
-      │  • Compute Hierarchical Oracle Reward & backpropagate    │                           │
-      └────────────────────────────┬─────────────────────────────┘                           │
-                                   │                                                         │
-        ┌──────────────────────────┴──────────────────────────┐                              │
-        │                                                     │                              │
-[If Target Not Reached]                                 [If Target Reached]                  │
-        │                                                     │                              │
-        ▼                                                     ▼                              │
-┌─────────────────────────────┐                       ┌─────────────────────────────┐        │
-│ PHASE 4: EVOLUTIONARY LOOP  │                       │ PHASE 5: EVIDENCE BINDING   │        │
-│ • Extract residual errors   │                       │ • Compute Numerical TAPAScore│       │
-│ • Record failure signature  │                       │ • Assemble Merkle CAS CID   │        │
-│ • Synthesize targeted       │                       │ • S_LB Leaderboard check    │        │
-│   external search queries   │                       │ • Assert |L_CV - S_LB| <= τ │        │
-│ • Increment recursion depth │                       │ • Emit GoalMark Certificate │        │
-└──────────────┬──────────────┘                       └─────────────────────────────┘        │
-               │                                                                             │
-               └──────────────► Loop back to Phase 1 (Targeted External Ingestion) ──────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       HOST HYPERVISOR & FRAME CLI                           │
+│  • Phase 0 Committee Qualification & Cryptographic bench.lock Seal          │
+│  • Ephemeral Jail Construction (/tmp/frame_jail_*)                          │
+│  • Gate 0 Pre-Flight AST Hash Deduplication & Runtime Projection            │
+│  • Gate 1 Dev Diagnostic Screen (CRN seeds k=3 vs Parent & Incumbent M*)    │
+│  • Gate 2 Confirmatory Holdout (rliable IQM Bootstrap & LORD-3 FDR)        │
+│  • MCTS Tree Management, Ancestor Retirement & Convergence Detection        │
+│  • Phase 5 Final Sealed Vault-Holdout Audit                                 │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │ Ephemeral Jail Isolation
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ISOLATED CANDIDATE PROCESS (candidate.py)                │
+│  • Pure experiment code: def run_experiment(...) & select_action(...)       │
+│  • CPython sys.addaudithook: Blocks filesystem snooping, sys._getframe,     │
+│    network sockets, subprocess spawning, and permission modifications       │
+│  • Completely oblivious to test seeds, holdouts, and verification internals │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## ⚙️ The 10 Distinctive Subsystems
-
-### 1. Cognitive Swarm & Information Governor
-- **Role Specialization**: Divides hypothesis generation into four orthogonal cognitive lanes: `Architecture` ($A$), `Objectives` ($B$), `Optimization` ($D$), and `Features` ($F$).
-- **Evidence Hierarchy Standard**: The `InformationGovernor` (`frame.agents.governor`) audits and grades all ingested literature before proposals enter synthesis:
-  $$G(s) = w_{\text{hier}}(T(s)) \cdot \left[0.40 \cdot r(s) + 0.40 \cdot m(s) + 0.20 \cdot v(s)\right] \ge \tau_{\text{gov}} = 0.40$$
-  where $w_{\text{hier}}$ weights peer-reviewed Cochrane/Journal publications ($1.0$), Preprints ($0.7$), Forums ($0.3$), and Unverified sources ($0.1$).
-- **Shannon Exploration Entropy**: Prevents greedy premature convergence into local optima by requiring:
-  $$H_{\text{phase1}} = -\sum_{k=1}^K p_k \ln(p_k) \ge 0.75 \ln(4) \approx 1.0397 \text{ nats}$$
-
-### 2. Dual-Key Novelty Contract
-Pre-confirmatory gating engine (`frame.verification.novelty`) that **consumes zero LORD alpha wealth**:
-- **Key 1 (Literature Distance $d_{\text{lit}} > 0.15$)**: Evaluates unigram/bigram cosine distance and Szymkiewicz-Simpson containment against prior art to detect surface-form variable renames.
-- **Key 2 (Functional Prediction Manifold Divergence $d_{\text{func}} > 0.10$)**: Computes uncentered cosine angle $\rho$ between holdout residual vectors:
-  $$d_{\text{func}} = 1 - |\rho|, \quad \rho = \frac{\mathbf{r}_{\text{base}} \cdot \mathbf{r}_{\text{cand}}}{\|\mathbf{r}_{\text{base}}\|_2 \|\mathbf{r}_{\text{cand}}\|_2}$$
-
-### 3. Tiered Symbolic-Numeric Math Engine (L0–L2)
-Unified formal math verifier (`frame.verification.math_engine`) evaluating candidates through dimensional compression:
-- **Level 0 (SymPy Analytic, $<200$ ms)**: Evaluates closed-form singularities, denominators $\text{denom}(x) \neq 0$, continuous differentiability, and asymptotic limits $\lim_{x \to \pm \infty} f(x)$.
-- **Level 1 (Interval Bound Propagation, $<1.5$ s)**: Executes symbolic tensor interval propagation over AST DAGs on $[-B, B]$ and computes Lanczos spectral condition numbers $\kappa(W) \le 10^7$.
-- **Level 2 (Interval Branch-and-Bound, $<8$ s)**: Recursive box bisection using `mpmath` multi-precision interval arithmetic and L-BFGS-B boundary exploration, producing formal mathematical proof or explicit counterexample coordinates $x_{\text{fail}}$.
-
-### 4. Rigorous Statistical Superiority & Streaming LORD 3 FDR
-- **Common Random Numbers (CRN)**: Evaluates candidates across paired seeds $k \ge 5$, isolating algorithmic improvements from data-split variance:
-  $$D_i = Y_{\text{cand}}^{(i)} - Y_{\text{base}}^{(i)} \quad (\text{or } Y_{\text{base}}^{(i)} - Y_{\text{cand}}^{(i)} \text{ for minimization})$$
-- **Region of Practical Equivalence (ROPE)**: Tests directional superiority beyond an operational margin $\epsilon_{\text{ROPE}}$:
-  $$H_0: \mu_D \le \epsilon_{\text{ROPE}} \quad \text{vs.} \quad H_1: \mu_D > \epsilon_{\text{ROPE}}, \quad t_{\text{ROPE}} = \frac{\bar{D} - \epsilon_{\text{ROPE}}}{S_D / \sqrt{k}}$$
-- **Online Streaming LORD 3**: Evaluates dynamic thresholds with Riemann zeta normalizing constant $\zeta(1.6) \approx 2.285766$:
-  $$\alpha_t = W_0 \gamma_t + (\alpha - W_0) \gamma_{t - \tau_1}\mathbf{1}_{\{\tau_1 < t\}} + \sum_{j \ge 2 : \tau_j < t} \alpha \gamma_{t - \tau_j}$$
-
-### 5. Edge-Indexed FDR & The Blend Edge Protocol
-- **Directed Graph Routing**: Every statistical test indexes a specific edge $e = (u \to v)$ in `StatisticalVerificationReport`:
-  - `edge_id`: Unique transition string (`edge_gen0_to_gen1_lgbm`, `edge_incumbent_to_blend`).
-  - `edge_type`: `"atomic_transition"`, `"blend_ensemble"`, or `"cumulative_campaign"`.
-  - Pre-registered per-edge margins: $\epsilon_{\text{ROPE}} = 0.005$ for architectural leaps, $\epsilon_{\text{ROPE}} = 0.001$ for stacking refinements.
-  - Distinct $\alpha_t$ consumption per edge (telemetry conflation strictly prohibited).
-- **The Blend Edge Protocol**: Ensembles cannot claim discovery against a naive root baseline (Gen 0); they **must pass two-stage screening against the incumbent best single constituent model**. If sub-threshold, the blend is rejected as parameter bloat.
-
-### 6. Adversarial Red-Team Suite & Anti-Reward Hacking
-- **5-Null Model Degeneracy Battery** (`frame.verification.red_team`): Candidates must outperform Zero ($f \equiv 0$), Constant ($\bar{y}$), Random ($\mathcal{N}(0, I)$), Identity ($f(x) = x$), and Label-Permuted models by $\Delta_{\text{null}} > \epsilon_{\text{robust}}$.
-- **Variance Preservation Ratio**: Asserts output standard deviation satisfies $s_{\hat{y}} \ge 0.50 s_y$ to prevent trivial mean collapse.
-- **Causal Lookahead Gradient Probe**: Enforces future-token gradient $\frac{\partial y_t}{\partial x_{t+k}} \equiv 0$ in autoregressive sequence architectures.
-
-### 7. Numerical TAPAScore Formulation
-The **Targeted Analytical Performance Alignment Score** (`frame.verification.tapa`) computes a deterministic scalar $\in [0, 100]$:
-$$\text{TAPAScore} = 100 \times R_{\text{proof}} \times R_{\text{legality}} \times \left[ 0.50 \cdot \tanh(\max(0, R_{\text{stat}})) + 0.25 \cdot \eta_{\text{robust}} + 0.25 \cdot \eta_{\text{var}} \right]$$
-- $R_{\text{proof}}, R_{\text{legality}} \in \{0, 1\}$: Hard gates for formal proof and recombination typing.
-- $R_{\text{stat}}$: Statistical discovery power $\max(0, \bar{D} - \epsilon_{\text{ROPE}}) \cdot \ln(1 + \alpha_t / \max(p_{\text{ROPE}}, 10^{-9}))$.
-- $\eta_{\text{robust}}$: Clipped margin over best adversarial null model.
-- $\eta_{\text{var}}$: Variance preservation penalty function preventing variance collapse or explosion.
-- **Modality B (SAEs)**: Incorporates hard gates for dead feature ratio $<1\%$, loss recovery $R \ge 80\%$, and $L_0$ target sparsity alignment.
-
-### 8. Three-Tier Compute Dispatch Router
-Deterministic Program-of-Thought (PoT) dry-run profiler (`frame.pot.tracer`) measures forward/backward ATen FLOPs via PyTorch `FlopCounterMode` ($B=1$) and routes compute:
-- **Tier 1 (Host Local)**: $F_{\text{total}} \le 3 \times 10^{14}$ FLOPs, Peak VRAM $\le 3$ GB, runtime $\le 300$ s. Memory fraction capped at 75% with expandable CUDA segments.
-- **Tier 2 (Kaggle Remote REST)**: $3 \times 10^{14} < F_{\text{total}} \le 10^{17}$ FLOPs, Peak VRAM $\le 14.5$ GB (Tesla P100 / Dual T4). Dispatched via self-extracting Base64 payload ([`bundler.py`](frame/runners/kaggle/bundler.py)) over a zero-dependency REST client with a 7-day 30h quota ledger.
-- **Tier 3 (Manual Air-Gapped Capsule)**: $F_{\text{total}} > 10^{17}$ FLOPs, multi-GPU FSDP runs. Generates an air-gapped Docker bundle ([`capsule.py`](frame/runners/manual/capsule.py)) with deterministic host micro-replay verification ($|\Delta \mathcal{L}_{\text{replay}}| \le 10^{-4}$).
-
-### 9. Persistent Dual-Sink Epistemic Ledgers
-Persistent state node (`frame.schemas.learning_state`) maintains queryable audit event streams:
-- `governor_event_logs`: Ingests `source_vetting`, `exploration_entropy_audit`, and `novelty_audit` events.
-- `executioner_event_logs`: Ingests `upper_envelope_update`, `watchdog_monotonicity`, `stagnation_check` (vanishing gradients, loss plateaus, circular ASTs), and `ast_falsification_blocked` events.
-
-### 10. Cryptographic Merkle CAS Evidence Binding
-Every verified claim is hashed using **RFC 8785 JSON Canonicalization Scheme (JCS)**:
-$$\text{Merkle Root CID} = \text{SHA256}(\text{Hypothesis Hash} \parallel \text{Execution Receipt Hash} \parallel \text{Statistical Report Hash})$$
-Yielding an unbroken audit trail:
-$$\text{Scientific Claim} \longrightarrow \text{Report}_{\text{CID}} \longrightarrow \text{Receipt}_{\text{CID}} \longrightarrow \text{Code}_{\text{CID}} \longrightarrow \text{Dataset}_{\text{CID}}$$
-
----
-
-## 📁 Repository Layout
+## 🔄 System Architecture
 
 ```
-frame/
-├── frame/                              # Core Framework Package
-│   ├── agents/                         # Cognitive Swarm Roles & Bridges
-│   │   ├── agy_bridge.py               # Antigravity CLI swarm coordinator
-│   │   └── governor.py                 # Information Governor evidence grading & entropy
-│   ├── brain/                          # Search, Planning & Experimental Design
-│   │   ├── campaign.py                 # Autonomous closed-loop campaign runner
-│   │   ├── executioner.py              # Watchdog monitoring & orthogonal warm restarts
-│   │   ├── experimental_design.py      # Power analysis, two-stage screening, quad-baselines
-│   │   ├── state.py                    # MCTS nodes & SearchAccountingLedger
-│   │   └── thinking.py                 # Adaptive UCT, AST memory, recombination grammar
-│   ├── feedback/                       # Visualization & Incentive Surfaces
-│   │   └── visualization.py            # SVG contour plots & 24-bit ANSI terminal heatmaps
-│   ├── pot/                            # Program of Thought Tracing
-│   │   └── tracer.py                   # FlopCounterMode profiler & compute router
-│   ├── runners/                        # Hardware Execution Tiers
-│   │   ├── kaggle/                     # Native REST client, bundler, quota ledger
-│   │   └── manual/                     # Air-gapped capsule generator & replay verifier
-│   ├── schemas/                        # Pydantic v2 Production Data Contracts
-│   │   ├── capsule.py                  # Capsule manifests & replay verification schemas
-│   │   ├── compute.py                  # ExecutionTier & ComputeProfile
-│   │   ├── hypothesis.py               # Sealed seed commitments & Hypothesis schema
-│   │   ├── learning_state.py           # SwarmLearningStateNode & dual-sink event ledgers
-│   │   ├── novelty.py                  # DualKeyNoveltyContract results & verdicts
-│   │   ├── receipt.py                  # HardwareTelemetry & ExecutionReceipt
-│   │   └── verification.py             # StatisticalVerificationReport & PairedSeedMetrics
-│   ├── utils/                          # Utilities
-│   │   └── canonical_json.py           # RFC 8785 Canonical JSON serializer
-│   ├── verification/                   # Formal Mathematics & Statistics
-│   │   ├── domain_evidence.py          # Data provenance & ethical standards
-│   │   ├── harness.py                  # Decoupled isolated verifier harness
-│   │   ├── invariants.py               # Physics, biology & boundary condition plugins
-│   │   ├── math_engine.py              # Tiered symbolic-numeric verifier (L0, L1, L2)
-│   │   ├── novelty.py                  # Dual-key novelty contract engine
-│   │   ├── red_team.py                 # Adversarial red-team suite (5 null models)
-│   │   ├── statistics.py               # CRN Paired ROPE t-test & LORD 3 streaming FDR
-│   │   └── tapa.py                     # Numerical TAPAScore formulations (Modality A & B)
-│   └── cli.py                          # Unified CLI entrypoint
-├── docs/                               # Master Documentation & Publications
-│   ├── FRAME_AR_SYSTEM_REPORT.pdf      # 12-page compiled LaTeX publication report
-│   ├── FRAME_AR_SYSTEM_REPORT.tex      # LaTeX source code with TikZ diagrams
-│   └── FRAME_AR_SYSTEM_REPORT.toc      # Table of contents
-├── skills/                             # Antigravity & Agentic Skills
-│   └── frame-ar/
-│       └── SKILL.md                    # Official FRAME-AR skill definition
-├── tests/                              # Comprehensive Test Suite (793 tests)
-│   ├── test_anti_reward_hacking.py
-│   ├── test_brain.py
-│   ├── test_branch_isolation_and_recursive_loop.py
-│   ├── test_cli.py
-│   ├── test_domain_evidence.py
-│   ├── test_domain_evidence_challenger.py
-│   ├── test_e2e_cognitive_tiers.py     # 218 E2E cognitive tier tests
-│   ├── test_empirical_m5_challenger.py
-│   ├── test_executioner.py
-│   ├── test_executioner_mcts_simulation_challenger.py
-│   ├── test_experimental_design.py
-│   ├── test_framework.py
-│   ├── test_governor.py
-│   ├── test_kaggle_client.py
-│   ├── test_learning_state.py
-│   ├── test_learning_state_challenger.py
-│   ├── test_learning_state_stress.py
-│   ├── test_math_engine.py
-│   ├── test_novelty_adversarial.py
-│   ├── test_novelty_challenger.py
-│   ├── test_novelty_contract.py
-│   ├── test_preflight_verifications.py # Edge-indexed FDR, blend edge, TAPAScore
-│   └── test_visualization.py
-├── FRAME_AR_SPECIFICATION.md           # Master System Specification
-├── PROJECT.md                          # Cognitive Overhaul Architecture Specification
-├── TEST_INFRA.md                       # E2E Test Suite Specification
-├── pyproject.toml                      # PEP 621 Build & Package Configuration
-└── README.md                           # Master Documentation & Quickstart
+                               ┌──────────────────────────┐
+                               │  Phase 0: Qualification  │
+                               │  • 7-Point Meta-Verify   │
+                               │  • Committee Review      │
+                               │  • Cryptographic Lock    │
+                               └────────────┬─────────────┘
+                                            │ bench.lock
+                                            ▼
+           ┌──────────────────────────────────────────────────────────────────┐
+           │                      Phases 1–4: MCTS Search Loop                 │
+           │                                                                  │
+           │  ┌────────────────────┐            ┌──────────────────────────┐  │
+           │  │ 1. UCT Selection   │            │ 2. Jail Preparation      │  │
+           │  │ • Anti-Bleed UCT   ├───────────►│ • /tmp/frame_jail_*      │  │
+           │  │ • Retire Ancestors │            │ • BRIEF.md + candidate.py│  │
+           │  └────────────────────┘            └────────────┬─────────────┘  │
+           │                                                 │                │
+           │                                                 ▼                │
+           │  ┌────────────────────┐            ┌──────────────────────────┐  │
+           │  │ 4. Evaluation      │            │ 3. Worker Execution      │  │
+           │  │ • Gate 0: AST/Time │◄───────────┤ • agy -p <short_prompt>  │  │
+           │  │ • Gate 1: Dev CRN  │            │ • In-place code mutation │  │
+           │  │ • Gate 2: LORD-3   │            │ • extract-code fallback  │  │
+           │  └─────────┬──────────┘            └──────────────────────────┘  │
+           │            │                                                     │
+           └────────────┼─────────────────────────────────────────────────────┘
+                        │ Target Steps or Stagnation Early-Stop
+                        ▼
+           ┌──────────────────────────┐
+           │   Phase 5: Vault Audit   │
+           │  • Sealed Holdout Split  │
+           │  • Generalization Check  │
+           │  • Cryptographic Seal    │
+           └──────────────────────────┘
 ```
 
 ---
 
-## 🚀 Installation & Setup
+## 🔬 The 5-Phase Research Lifecycle
 
-### Requirements
-- Python $\ge 3.10$
-- PyTorch $\ge 2.0.0$
-- NumPy, SciPy, Pydantic $\ge 2.0$, SymPy, mpmath
+### Phase 0: Benchmark Qualification & Cryptographic Lock
+Before any agent runs, the benchmark must undergo a rigorous 7-point meta-verification and a 3-stage review committee:
+1. **Smoke Test**: Baseline executes cleanly without warnings or unhandled exceptions.
+2. **Baseline Competence**: Baseline exceeds trivial floor score thresholds.
+3. **Null-Model Separation**: Baseline statistically separates from zero/random null models ($p < 0.01$).
+4. **Positive Control Separation**: An existing known strong implementation reliably beats the baseline ($p < 0.005$).
+5. **Noise Sensitivity Monotonicity**: Increasing observation noise degrades performance monotonically.
+6. **Domain Evidence Audit**: Required domain assets and plant dynamics are present and valid.
+7. **Polymorphic Expressivity Probe**: Harness successfully evaluates 3 structurally incompatible architectures (linear dict, nonlinear MLP, non-parametric lookup table) without parameter shape lock-in.
 
-### Install from Source
+Once qualified, a 3-stage blind-to-crossed committee review occurs (Stage 1 Independent LLM Reviews $\to$ Stage 2 Cross-Critique $\to$ Stage 3 Human Approval), emitting a signed, immutable `bench.lock` (RFC 8785 Canonical JSON SHA-256 digest).
+
+### Phase 1: Context Briefing & Mechanical Operator Assignment
+The orchestrator selects the next node via UCT and assigns one of 4 mechanical operator roles in fixed cyclic order:
+- `SPEC_IMPLEMENTATION`: Introduces structural hypotheses or architectural additions.
+- `ERROR_SLICE`: Identifies underperforming failure modes and targets residual errors.
+- `HYPERPARAM_SCHEDULE`: Tunes optimization schedules, learning rates, or regularization weights.
+- `ABLATION_SIMPLIFY`: Strips non-essential complexity to maximize parameter efficiency.
+
+The orchestrator generates an isolated `BRIEF.md` containing the current node's performance, the operator goal, and the reigning Incumbent score.
+
+### Phase 2: Jail Preparation & In-Place Code Mutation
+An ephemeral jail (`/tmp/frame_jail_*`) is provisioned with `BRIEF.md`, parent candidate code, and metadata. The worker agent modifies `candidate.py` in-place. If the worker prints code to stdout, the hypervisor's `extract-code` engine automatically recovers the candidate script.
+
+### Phase 3: The 3-Gate Evaluation Funnel
+The candidate is passed into the deterministic evaluation funnel (detailed below).
+
+### Phase 4: MCTS Backpropagation & Epistemic State Update
+Node visits, rewards, and ancestry are updated across disk. If the candidate achieves a statistically confirmed improvement over Incumbent $M^*$ at Gate 2, it is promoted as the new Global Incumbent.
+
+### Phase 5: Sealed Vault-Holdout Generalization Audit
+At campaign completion (or upon early convergence), the reigning Incumbent is audited against the sealed, untouched Vault-Holdout split to confirm out-of-sample generalization.
+
+---
+
+## 🛡️ The 3-Gate Evaluation Funnel
+
+Every candidate must pass through 3 sequential, progressively more rigorous evaluation gates:
+
+```
+Candidate File
+      │
+      ▼
+┌──────────────┐   Failed (Syntax/Duplicate/Timeout)   ┌────────────────┐
+│    Gate 0    ├──────────────────────────────────────►│     BUGGY      │
+│  Pre-Flight  │                                       └────────────────┘
+└──────┬───────┘
+       │ Passed
+       ▼
+┌──────────────┐   Delta vs Parent <= 0 OR vs Incumbent <= 0
+│    Gate 1    ├──────────────────────────────────────►┌────────────────┐
+│Dev Diagnostic│                                       │FUTILITY_PRUNED │
+└──────┬───────┘                                       └────────────────┘
+       │ Beat Parent & Incumbent (0 Alpha Spent)
+       ▼
+┌──────────────┐   p >= alpha_t                        ┌────────────────┐
+│    Gate 2    ├──────────────────────────────────────►│CONFIRMATORY_NULL
+│ Confirmatory │                                       └────────────────┘
+└──────┬───────┘
+       │ p < alpha_t (Significant Discovery!)
+       ▼
+┌──────────────────────────────┐
+│     PROMOTED_DISCOVERY       │ (Becomes Incumbent M*)
+└──────────────────────────────┘
+```
+
+### Gate 0: Pre-Flight Integrity, AST Deduplication & Runtime Projection
+- **AST Deduplication**: `OperatorASTMemory` parses canonical ASTs. Exact code duplicates or cosmetic variable renames are rejected with exit code `2` (`GATE0_AST_DUPLICATE`) with **zero compute or alpha spent**.
+- **Runtime Projection Guard**: Measures smoke execution time $T_{\text{smoke}}$. If $T_{\text{smoke}} > \max(5.0\text{s}, 0.22 \times T_{\text{timeout}})$, fails fast with exit code `5` (`GATE0_RUNTIME_PROJECTION_EXCEEDED`), forcing the worker to optimize its implementation in the local debug loop.
+- **Local Retry Loop**: The hypervisor permits up to 3 rapid debug retries within the jail before recording node status.
+
+### Gate 1: Dev Diagnostic Screening ($k=3$ CRN Seeds)
+- Evaluates candidate on a fast Common Random Numbers (CRN) pilot split ($k=3$ seeds).
+- **Incumbent Superiority Filter**: Candidate must beat **both** its parent node and the reigning Global Incumbent $M^*$ (`pilot_delta_vs_parent > 0` AND `pilot_delta_vs_incumbent > 0`).
+- If it fails to outperform either, it is marked `FUTILITY_PRUNED` and discarded **without spending any LORD-3 alpha wealth**.
+
+### Gate 2: Full Confirmatory Holdout & LORD-3 FDR Accounting ($k^*=5..15$ Seeds)
+- Evaluates candidate on the full confirmatory holdout split.
+- Employs `rliable` Interquartile Mean (IQM) bootstrap testing with pre-registered ROPE margins ($\epsilon_{\text{ROPE}}$).
+- **Online FDR Control (Streaming LORD-3)**: Dynamically calculates significance threshold $\alpha_t$ following a Riemann Zeta decay schedule:
+  $$\gamma_t = \frac{1}{\zeta(1.6) \cdot t^{1.6}}, \quad \alpha_t = W_0 \cdot \gamma_t$$
+  Ensures the False Discovery Rate across arbitrary stopping times is rigorously controlled ($\mathbb{E}[\text{FDR}] \le \alpha$).
+- If $p < \alpha_t$, candidate is certified as `PROMOTED_DISCOVERY` and crowned new Incumbent $M^*$.
+
+### The Blend Edge Protocol
+Whenever a candidate combines multiple model policies or predictions, it must pass `--edge-type blend_ensemble`. Blend candidates are screened against the **Incumbent Single Best Model ($M^*$)** rather than an inferior baseline, completely eliminating parameter-bloated ensemble illusions.
+
+---
+
+## 🚀 Key Upgrades in FRAME-AR v2.5 (Stable)
+
+| Capability | Previous Implementation | v2.5 Stable Implementation |
+| :--- | :--- | :--- |
+| **Execution Timeout** | Static `30.0s` limit | **Dynamic Baseline-Anchored Calibration**: Measures baseline & positive control runtime; auto-calibrates $T_{\text{timeout}} = \text{clip}(8 \times \max(T_{\text{base}}, T_{\text{pos}}), 45\text{s}, 600\text{s})$. |
+| **Runtime Protection** | Timeout during Gate 1 | **Gate-0 Runtime Projection Guard**: Smoke test projects full runtime; fails fast with code `5` if execution will exceed budget. |
+| **Tree Search Focus** | Regressed to root ancestor | **Superseded Ancestor Retirement**: Automatically retires ancestors that spawned promoted children and trail Incumbent by $> 2 \times \epsilon_{\text{ROPE}}$. |
+| **Branch Thrashing** | Unbounded retries on dead branches | **Branch Exhaustion Penalty**: Heavy UCT penalty after 4 consecutive failures across an operator cycle; pivots search to active branches. |
+| **Campaign Stopping** | Ran fixed steps blindly | **Convergence Early-Stop**: Stops search after 5 stagnant steps without promotion, jumping cleanly to Vault-Holdout audit. |
+| **Disk Synchronization**| Ancestors missing child state | **Deep Multi-Level Backprop**: Writes updated visits, rewards, and children IDs to `node_record.json` on disk across all ancestor levels. |
+| **Policy Expressivity** | Hardcoded parameter vectors | **Open Policy Expressivity Contract**: `select_action(obs, policy_state)` in candidate enables arbitrary architectures. |
+| **Worker Pipe** | Tool failures on headless runs | **Stateless Stdin/Stdout Pipe**: Zero-tool worker mode with `extract-code` supporting in-place and fenced code blocks. |
+| **Inter-Process IPC** | Race conditions with orchestrator | **Lock-Free Maildir IPC**: Single-writer filesystem maildir pattern for pause, abort, and directive injection. |
+
+---
+
+## 📈 Evolution & Overhauls: v1 to v2.5
+
+FRAME-AR has undergone a comprehensive evolutionary overhaul to transition from an experimental in-process prototype to a production-grade, out-of-process autonomous platform:
+
+### 1. The Legacy v1 Monolith (Archived at `v1.0.0-archive`, Commit `1a55a63`)
+- **Architecture**: In-process multi-agent system combining symbolic math engines (L0 SymPy, L1 IBP, L2 IBnB), TAPAScore calculation, and Kaggle runners.
+- **Core Limitation**: Lack of process isolation allowed agents to introspect evaluation memory, leak holdout splits, and deadlock inside complex in-process loops.
+- **Preservation**: Archived with 793 passing tests in `ARCHIVE_V1_MANIFEST.md` and `archive/v1-main`.
+
+### 2. The v2.0 Out-of-Process Paradigm
+- Completely rewrote the core engine with strict **Separation of Powers**.
+- Implemented CPython audit sandbox (`sys.addaudithook`), 3-gate evaluation funnel, and cryptographic benchmark locking (`bench.lock`).
+
+### 3. Incremental Overhauls (v2.1 – v2.4)
+- **v2.1**: Static Bash hypervisor (`frame-orchestrate.sh`), out-of-band monitor (`frame-mon.py`), and Riemann Zeta LORD-3 decay.
+- **v2.2**: Stateless stdin/stdout worker pipe with `extract-code` recovery and persistent step logging.
+- **v2.3**: In-place jail mutations with short-argv (<200 bytes) prompts and Grade-A nonlinear RL templates (`wind_pendulum_rl`).
+- **v2.4**: Open policy expressivity contract (`select_action`), Phase-0 polymorphic expressivity probe (Check #7), and Gate-1 incumbent superiority filtering.
+
+### 4. The v2.5.0 Stable Release
+- Solved all empirical scaling and convergence bottlenecks: dynamic timeout calibration, Gate-0 runtime projection, ancestor retirement, branch exhaustion caps, and automated early-stop.
+- Fully verified with 29 comprehensive test suites covering end-to-end orchestration, sandboxing, and statistical accounting.
+
+---
+
+## 🛠️ Quickstart: Running Basic Toy Runs
+
+### 1. Installation
+
+Clone and install FRAME-AR in editable mode with development dependencies:
+
 ```bash
-git clone https://github.com/Hitotsume-nozo/frame-ar.git
-cd frame-ar
-pip install -e .
-```
-
-### Install with Developer Dependencies
-```bash
+cd ~/frame
 pip install -e ".[dev]"
 ```
 
----
-
-## 💻 CLI Reference & Usage
-
-The unified CLI entrypoint `frame` exposes all cognitive and verification capabilities:
-
+Verify your installation:
 ```bash
-# 1. Run an end-to-end autonomous research campaign
-frame run --goal "Optimize Tabular California Housing" --max-iterations 5 --target-improvement 0.10
-
-# 2. Export subagent role specifications for Antigravity (agy)
-frame swarm --goal "Optimize Transformer Attention" --export-agy-specs
-
-# 3. Formally verify mathematical stability of an activation or loss formula
-frame verify-math --expr "x / (1 + torch.exp(-x))" --level2
-
-# 4. Audit a PyTorch candidate model against 5 adversarial null models
-frame red-team
-
-# 5. Inspect metric incentive surface and display a 24-bit ANSI terminal heatmap
-frame inspect-metric --name cross_entropy_loss
-
-# 6. Inspect current MCTS tree depth, stage yields, and active LORD alpha wealth
-frame status
-
-# 7. Check Kaggle GPU quota and remote worker status
-frame kaggle --status
+python3 -c "import frame; print(frame.__version__)"
+# Output: 2.5.0
 ```
 
 ---
 
-## 🧪 Empirical Verification Matrix (793 Tests)
+### 2. Automated Toy Run with Bash Hypervisor
 
-The framework includes a comprehensive 22-suite test matrix with **793 passing tests**:
+The fastest way to execute an end-to-end autonomous research run is with `frame-orchestrate.sh`. The hypervisor automatically handles benchmark initialization, 7-point meta-verification, Phase 0 committee locking, jail isolation, MCTS search, and final vault evaluation.
+
+#### Example A: Nonlinear Reinforcement Learning Toy Run (`wind_pendulum_rl`)
+```bash
+./frame-orchestrate.sh --topic wind_pendulum_rl --domain rl_control --steps 5
+```
+
+#### Example B: Tabular Machine Learning Toy Run (`housing_tab`)
+```bash
+./frame-orchestrate.sh --topic housing_tab --domain kaggle_tabular --steps 5
+```
+
+During Phase 0, if the benchmark is not yet locked, the hypervisor launches the manual audit review. Type `y` and press Enter to approve `bench.lock` and initiate the MCTS search.
+
+---
+
+### 3. Interactive Dual-Pane Monitoring & Injection
+
+For full real-time visibility and human-in-the-loop steerability, run the orchestrator in one terminal pane and the live monitor in another:
+
+#### Pane 1: Running the Hypervisor
+```bash
+./frame-orchestrate.sh --topic wind_pendulum_rl --domain rl_control --steps 10
+```
+
+#### Pane 2: Live Monitor Dashboard & Directive Injection
+```bash
+# View live ANSI dashboard (MCTS tree, Incumbent M*, LORD alpha wealth):
+python3 frame-mon.py --topic wind_pendulum_rl
+
+# Pause the campaign:
+python3 frame-mon.py --topic wind_pendulum_rl --pause
+
+# Resume the campaign:
+python3 frame-mon.py --topic wind_pendulum_rl --resume
+
+# Inject a high-priority hypothesis onto the current Incumbent:
+python3 frame-mon.py --topic wind_pendulum_rl --inject-parent node_4 \
+  --spec "Add cubic velocity shear compensation with nonlinear saturation at u_max"
+
+# Abort an underperforming branch without spending alpha wealth:
+python3 frame-mon.py --topic wind_pendulum_rl --abort node_2 \
+  --spec "Replacement hypothesis: test piecewise lookup policy"
+```
+
+---
+
+### 4. Manual Step-by-Step CLI Walkthrough
+
+You can also operate FRAME-AR deterministically using individual CLI subcommands:
 
 ```bash
-pytest tests/
+# 1. Initialize a benchmark directory
+python3 -m frame.cli bench init --topic my_toy_run --domain rl_control
+
+# 2. Run the 7-point empirical qualification
+python3 -m frame.cli bench verify --topic my_toy_run
+
+# 3. Approve and cryptographically lock the benchmark
+python3 -m frame.cli bench approve --topic my_toy_run --reviewer "$USER"
+
+# 4. Prepare an isolated execution jail for the next worker
+python3 -m frame.cli prepare-jail --topic my_toy_run --jail-dir /tmp/my_jail
+
+# 5. Inside /tmp/my_jail, inspect BRIEF.md and edit candidate.py
+# Run pre-flight Gate-0 smoke check:
+python3 -m frame.cli smoke-check --topic my_toy_run --candidate /tmp/my_jail/candidate.py
+
+# 6. Evaluate candidate through the full 3-gate funnel
+python3 -m frame.cli step --topic my_toy_run --candidate /tmp/my_jail/candidate.py \
+  --parent node_0 --role spec_implementation
+
+# 7. Check campaign status and MCTS tree
+python3 -m frame.cli status --topic my_toy_run
+
+# 8. Run final Vault-Holdout audit on the reigning Incumbent
+python3 -m frame.cli vault-eval --topic my_toy_run
+```
+
+---
+
+## 💻 CLI Reference
+
+| Command | Arguments | Purpose |
+| :--- | :--- | :--- |
+| `frame bench init` | `--topic <slug> --domain <type>` | Scaffold benchmark with baseline, positive control, harness, and spec. |
+| `frame bench verify` | `--topic <slug>` | Execute 7-point empirical meta-verification and expressivity probe. |
+| `frame bench check-lock` | `--topic <slug>` | Verify cryptographic validity of `bench.lock`. |
+| `frame bench approve` | `--topic <slug> --reviewer <name>` | Sign committee review and generate cryptographic `bench.lock`. |
+| `frame bench export-stage1` | `--topic <slug>` | Export anonymized Stage 1 blind review packet. |
+| `frame bench export-stage2` | `--topic <slug> --reviewer <name>` | Export Stage 2 cross-critique packet. |
+| `frame prepare-jail` | `--topic <slug> --jail-dir <path>` | Provision isolated jail with `BRIEF.md`, parent candidate, and `meta.env`. |
+| `frame extract-code` | `--candidate <f> --backup <f> --stdout-log <f>` | Extract modified candidate from in-place edits or worker stdout. |
+| `frame smoke-check` | `--topic <slug> --candidate <path>` | Run Gate 0 AST duplicate check, syntax validation, and runtime projection guard. |
+| `frame step` | `--topic <slug> --candidate <p> [--edge-type blend_ensemble]` | Evaluate candidate across Gate 1 dev diagnostic and Gate 2 confirmatory holdout. |
+| `frame inject` | `--topic <slug> --parent <id> --spec "<text>"` | Enqueue high-priority human/frontier directive ticket. |
+| `frame abort` | `--topic <slug> --node <id> [--inject-spec "<text>"]` | Abort node mid-run without spending alpha; queue replacement spec. |
+| `frame status` | `--topic <slug>` | Display JSON status of MCTS tree, Incumbent $M^*$, and LORD-3 accounting. |
+| `frame vault-eval` | `--topic <slug>` | Evaluate reigning Incumbent on sealed untouched Vault-Holdout split. |
+
+---
+
+## 📂 Repository Layout
+
+```
+~/frame/
+├── frame/                         # Core FRAME-AR package
+│   ├── bench/                     # Benchmark management & qualification
+│   │   ├── registry.py            # Committee reviews, lock verification & state
+│   │   ├── templates.py           # RL control & Kaggle tabular benchmark templates
+│   │   └── verifier.py            # 7-point meta-verification & dynamic timeout calibration
+│   ├── brain/                     # Tree search & cognitive routing
+│   │   └── tree.py                # MCTS CampaignTree, ancestor retirement & exhaustion
+│   ├── eval/                      # Evaluation & statistical accounting
+│   │   ├── funnel.py              # 3-gate FunnelEvaluator (Gate 0, Gate 1, Gate 2)
+│   │   ├── sandbox.py             # CPython audit hook sandbox & AST select_action binding
+│   │   └── statistics.py          # LORD-3 controller, Riemann Zeta decay & ROPE bootstrap
+│   ├── swarm/                     # Context briefing & agent swarm
+│   │   └── brief.py               # Context brief generator & operator assignments
+│   ├── utils/                     # Canonical serialization & hashing
+│   │   └── canonical_json.py      # RFC 8785 Canonical JSON & SHA-256 digests
+│   ├── cli.py                     # Unified zero-mock CLI entrypoint
+│   └── schemas.py                 # Pydantic domain models, node records & reports
+├── tests/                         # Comprehensive verification test suite
+│   ├── test_bash_hypervisor_and_monitor.py   # Hypervisor, monitor & IPC tests
+│   ├── test_frame_v2_e2e.py                  # End-to-end pipeline & sandbox tests
+│   ├── test_v2_4_expressivity_and_funnel.py  # Expressivity & Gate-1 incumbent filter
+│   └── test_v2_5_scaling_and_convergence.py  # Timeout calibration & convergence tests
+├── skills/                        # Antigravity agent skill definitions
+│   └── frame-ar/SKILL.md          # Official FRAME-AR v2 agent skill specification
+├── frame-orchestrate.sh           # Top-level static UNIX Bash hypervisor
+├── frame-mon.py                   # Out-of-band live terminal monitor & injector
+├── pyproject.toml                 # Package configuration (version 2.5.0)
+├── CHANGELOG.md                   # Complete semantic version release history
+├── ARCHIVE_V1_MANIFEST.md         # Preserved state manifest for legacy v1 release
+├── README.md                      # Primary documentation & architecture guide
+└── LICENSE                        # MIT License
+```
+
+---
+
+## 🧪 Verification & Testing
+
+FRAME-AR v2.5 maintains a 100% test pass rate across 29 unit, integration, and end-to-end test suites:
+
+```bash
+pytest -v
 ```
 
 ```
 ============================= test session starts ==============================
-platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
 rootdir: /home/sparsh/frame
 configfile: pyproject.toml
-collected 793 items
 
-tests/test_anti_reward_hacking.py .......                                [  0%]
-tests/test_brain.py ..............                                       [  2%]
-tests/test_branch_isolation_and_recursive_loop.py ........               [  3%]
-tests/test_cli.py ..............                                         [  5%]
-tests/test_domain_evidence.py .......................................... [ 10%]
-tests/test_domain_evidence_challenger.py ...............                 [ 14%]
-tests/test_e2e_cognitive_tiers.py ...................................... [ 41%]
-tests/test_empirical_m5_challenger.py .................................. [ 48%]
-tests/test_executioner.py ............................................   [ 53%]
-tests/test_executioner_mcts_simulation_challenger.py ................... [ 57%]
-tests/test_experimental_design.py .......                                [ 58%]
-tests/test_framework.py ..........                                       [ 59%]
-tests/test_governor.py ........................                          [ 62%]
-tests/test_kaggle_client.py ................................             [ 66%]
-tests/test_learning_state.py ...................................         [ 71%]
-tests/test_learning_state_challenger.py ......................           [ 73%]
-tests/test_learning_state_stress.py ...........                          [ 75%]
-tests/test_math_engine.py ..........                                     [ 76%]
-tests/test_novelty_adversarial.py ...................................... [ 89%]
-tests/test_novelty_challenger.py ......................                  [ 92%]
-tests/test_novelty_contract.py .......................................   [ 97%]
-tests/test_preflight_verifications.py .............                      [ 98%]
-tests/test_visualization.py ........                                     [100%]
+tests/test_bash_hypervisor_and_monitor.py .........                      [ 31%]
+tests/test_frame_v2_e2e.py ...                                           [ 41%]
+tests/test_v2_4_expressivity_and_funnel.py .......                       [ 65%]
+tests/test_v2_5_scaling_and_convergence.py ..........                    [100%]
 
-============================= 793 passed in 22.73s =============================
+============================== 29 passed in 364.13s ==============================
 ```
 
----
-
-## 📚 Master Documentation & Publications
-
-| Document | Format | Location | Description |
-| :--- | :---: | :--- | :--- |
-| **Comprehensive System Report** | **PDF** | [`docs/FRAME_AR_SYSTEM_REPORT.pdf`](docs/FRAME_AR_SYSTEM_REPORT.pdf) | 12-page compiled publication report with TikZ architecture diagrams, proofs, and hardware calibration. |
-| **System Report Source** | **LaTeX** | [`docs/FRAME_AR_SYSTEM_REPORT.tex`](docs/FRAME_AR_SYSTEM_REPORT.tex) | Complete compilable LaTeX source code. |
-| **Architecture Specification** | **Markdown** | [`FRAME_AR_SPECIFICATION.md`](FRAME_AR_SPECIFICATION.md) | Full mathematical specification, CRN paired seeds, ROPE, LORD 3, edge-indexed FDR, and Merkle CAS. |
-| **FRAME-AR Agent Skill** | **Markdown** | [`skills/frame-ar/SKILL.md`](skills/frame-ar/SKILL.md) | Official agent skill instructions, non-deviation rules, and execution templates. |
-| **Cognitive Architecture Spec** | **Markdown** | [`PROJECT.md`](PROJECT.md) | Technical specification for Information Governor, Novelty Contracts, and Swarm roles. |
-| **E2E Test Infrastructure** | **Markdown** | [`TEST_INFRA.md`](TEST_INFRA.md) | Test architecture detailing all 20 cognitive features across 4 verification tiers. |
+Test coverage includes:
+- **Sandbox Security**: Mandatory `sys.addaudithook` preventing file, network, stack, and permission escapes.
+- **Statistical Rigor**: Polynomial Riemann Zeta LORD-3 decay, alpha wealth preservation, and Common Random Numbers paired-seed testing.
+- **Hypervisor Lifecycle**: Ephemeral `/tmp` jail allocation, timeout enforcement, Gate 0 retry loops, and code extraction.
+- **Tree Convergence**: Ancestor retirement under varying ROPE thresholds, branch exhaustion penalties, and early-stop convergence detection.
 
 ---
 
-## 📜 License
+## 🏛️ Legacy v1 Archive
 
-Distributed under the **MIT License**. See `LICENSE` for details.
+The original monolithic v1 architecture of FRAME-AR is permanently archived:
+- **Git Commit**: `1a55a63`
+- **Git Tag**: `v1.0.0-archive`
+- **Preservation Branch**: `archive/v1-main`
+- **Verification Status**: 793 passed unit and integration tests.
+- **Details**: See [ARCHIVE_V1_MANIFEST.md](ARCHIVE_V1_MANIFEST.md) for restoration procedures.
+
+---
+
+## 📄 License
+
+FRAME-AR is open-source software licensed under the [MIT License](LICENSE).

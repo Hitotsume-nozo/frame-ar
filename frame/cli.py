@@ -1,568 +1,466 @@
-"""FRAME-AR Command Line Interface (CLI).
-
-Provides unified command-line access to all FRAME-AR capabilities:
-- frame run: Execute end-to-end autonomous research on a goal
-- frame swarm: Run parallel multi-lane swarm research (Architecture, Objectives, Optimization, Features)
-- frame red-team: Adversarial null-model degeneracy and causal leakage auditing
-- frame verify-math: Tiered symbolic-numeric verification (L0 SymPy, L1 IBP, L2 IBnB)
-- frame inspect-metric: Incentive surface analysis and ANSI terminal heatmap rendering
-- frame capsule: Manual execution capsule packaging and micro-replay verification
-- frame status: Inspect MCTS epistemic state, LORD alpha wealth, and accounting ledger
-"""
+"""Unified Zero-Mock CLI for FRAME-AR v2."""
 
 import argparse
 import json
-import os
+from pathlib import Path
 import sys
-import numpy as np
-import torch
-import torch.nn as nn
 from typing import List, Optional
 
-from frame.schemas.compute import ExecutionTier
-from frame.schemas.hypothesis import Hypothesis, TargetDirection
-from frame.pot.tracer import profile_module_flops, route_compute_tier
-from frame.verification.statistics import LORDController, evaluate_paired_seed_rope
-from frame.verification.math_engine import (
-    compress_swiglu_2d,
-    compress_rmsnorm_invariant,
-    verify_l0_analytic,
-    verify_l1_symbolic_numeric,
-    verify_l2_ibnb,
-    IntervalBranchAndBoundSolver,
+from frame.bench.registry import (
+    approve_benchmark,
+    export_stage1_blind_packet,
+    export_stage2_cross_packet,
+    generate_human_review_markdown,
+    get_bench_dir,
+    get_benchmark_dir,
+    init_benchmark,
+    record_stage1_review,
+    record_stage2_critique,
+    verify_bench_lock,
 )
-from frame.verification.red_team import (
-    AdversarialRedTeamSuite,
-    RedTeamDegeneracyResult,
-    CausalLeakageResult,
-)
-from frame.brain.experimental_design import (
-    calculate_required_sample_size,
-    TwoStageScreeningController,
-    QuadBaselineGenerator,
-    verify_method_code_alignment,
-)
-from frame.brain.state import MCTSNode, SearchAccountingLedger, SearchStage
-from frame.brain.thinking import (
-    StructuralFalsificationMemory,
-    RecombinationLegalityGrammar,
-    LegalityViolation,
-)
-from frame.feedback.visualization import (
-    MetricScopeContract,
-    generate_ansi_terminal_heatmap,
-    generate_svg_contour_slice,
-)
-from frame.runners.manual.capsule import package_manual_capsule, verify_micro_replay
-from frame.agents.agy_bridge import AgySwarmCoordinator, build_agy_subagent_specs, LaneType
-from frame.brain.campaign import AutonomousCampaignRunner, CampaignConfig, CampaignResult
+from frame.bench.verifier import verify_benchmark
+from frame.brain.tree import CampaignTree
+from frame.eval.funnel import FunnelEvaluator
+from frame.schemas import EdgeType, OperatorRole
+from frame.swarm.brief import export_swarm_specs, generate_context_brief
 
 
-def cmd_status(args: argparse.Namespace) -> int:
-    """Displays current FRAME-AR engine status and accounting ledger."""
-    print("=" * 70)
-    print("FRAME-AR Autonomous Research Engine: System Status")
-    print("=" * 70)
-    
-    lord_path = os.path.join(".frame", "lord_state.json")
-    if os.path.exists(lord_path):
-        controller = LORDController.load_from_file(lord_path)
-    else:
-        controller = LORDController(alpha=0.05)
+def _read_text_arg(text: Optional[str], file_path: Optional[str]) -> str:
+    if file_path:
+        return Path(file_path).read_text(encoding="utf-8")
+    if text:
+        return text
+    raise ValueError("Provide either `--text` or `--file`.")
 
-    print(f"LORD 3 Streaming FDR Target Alpha: {controller.alpha}")
-    print(f"Initial Wealth W0: {controller.w0}")
-    print(f"Current Next Alpha (Step {controller.current_step + 1}): {controller.get_next_alpha():.6f}")
-    print(f"Confirmed Discoveries: {len(controller.discovery_indices)}")
-    
-    ledger_path = os.path.join(".frame", "accounting_ledger.json")
-    if os.path.exists(ledger_path):
-        ledger = SearchAccountingLedger.load_from_file(ledger_path)
-    else:
-        ledger = SearchAccountingLedger()
 
-    print("\nStage Accounting Metrics:")
-    for st in SearchStage:
-        rec = ledger._get_or_create_stage(st)
-        print(f"  [{st.value:28s}] Entered: {rec.hypotheses_entered:3d} | Passed: {rec.hypotheses_passed:3d} | Rejected: {rec.hypotheses_rejected:3d}")
-
-    # Swarm Learning State & Test-Time Compute Scaling
+def cmd_bench_check_lock(args: argparse.Namespace) -> int:
+    """Verifies that bench.lock exists and matches SHA-256 digests of all benchmark files."""
+    ws = Path(args.workspace).resolve()
+    bdir = get_benchmark_dir(ws, args.topic)
     try:
-        from frame.brain.learning_state import DEFAULT_LEARNING_STATE_PATH, load_learning_state
-        if os.path.exists(DEFAULT_LEARNING_STATE_PATH):
-            node = load_learning_state()
-            curve = node.get_upper_envelope_curve()
-            is_mono, gain = node.verify_monotonic_progression()
-            entropy = node.compute_epistemic_entropy()
-            print("\nSwarm Learning State & Test-Time Compute Scaling:")
-            print(f"  Node ID: {node.node_id} | Total Budget N: {node.total_budget_n}")
-            print(f"  Monotonic Progression: {is_mono} (Upper Envelope Gain: {gain:+.4f})")
-            print(f"  Epistemic Entropy: {entropy:.4f} nats")
-            if curve:
-                curve_preview = [round(float(v), 4) for v in curve[:8]]
-                print(f"  Scaling Curve Q*(N): {curve_preview}{'...' if len(curve) > 8 else ''} ({len(curve)} points)")
-            if getattr(node, "executioner_event_logs", None):
-                print(f"  Executioner Watchdog Event Logs ({len(node.executioner_event_logs)} events):")
-                for ev in node.executioner_event_logs[-5:]:
-                    ev_type = getattr(ev, "event_type", "EVENT")
-                    b_id = getattr(ev, "branch_id", "")
-                    trig = getattr(ev, "trigger", "")
-                    print(f"    - [{ev_type}] Branch: {b_id} | Trigger: {trig}")
-            if getattr(node, "governor_audit_logs", None):
-                print(f"  Information Governor Audit Logs ({len(node.governor_audit_logs)} logs):")
-                for g_log in node.governor_audit_logs[-5:]:
-                    print(f"    - {g_log}")
-    except Exception:
-        pass
-
-    try:
-        from frame.runners.kaggle.credentials import load_kaggle_credentials
-        from frame.runners.kaggle.quota import KaggleQuotaLedger
-        creds = load_kaggle_credentials()
-        ledger_q = KaggleQuotaLedger()
-        used_q = ledger_q.get_used_gpu_hours()
-        rem_q = ledger_q.get_remaining_gpu_hours()
-        print(f"\nTier 2 Kaggle Remote Engine:")
-        print(f"  Credentials: Verified (User: {creds.username})")
-        print(f"  Rolling 7-Day GPU Quota: {used_q:.1f}h / 30.0h used ({rem_q:.1f}h remaining)")
-    except Exception as e:
-        print(f"\nTier 2 Kaggle Remote Engine: Unconfigured / Inactive ({e})")
-    print("=" * 70)
-    return 0
-
-
-def cmd_verify_math(args: argparse.Namespace) -> int:
-    """Executes tiered symbolic-numeric verification (L0, L1, L2)."""
-    expr_str = args.expr
-    print(f"==> Initiating Tiered Math Verification for: {expr_str}")
-    
-    # Clean expression for SymPy and AST analysis
-    sp_expr_str = expr_str.replace("torch.", "").replace("math.", "").replace("np.", "")
-    
-    # 1. Level 0 Analytical SymPy
-    res_l0 = verify_l0_analytic(sp_expr_str, variables=["x"])
-    print(f"Level 0 (SymPy Analytical) -> Passed: {res_l0.passed} | Poles: {res_l0.poles} | Limits: {res_l0.limits}")
-    if not res_l0.passed:
-        print(f"[!] Level 0 Rejection: {res_l0.details.get('reason', 'Analytical check failed')}")
-        return 1
-        
-    # 2. Level 1 Interval Bound Propagation
-    try:
-        ast_code = f"y = {sp_expr_str}"
-        res_l1 = verify_l1_symbolic_numeric(ast_code, input_bound=5.0)
-        print(f"Level 1 (Interval Bound Prop) -> Certified Safe: {res_l1.passed} | Output Range: {res_l1.output_interval}")
-        if not res_l1.passed:
-            print("[!] Level 1 Rejection: Denominator hazard detected under IBP.")
-            return 1
-    except Exception as e:
-        print(f"Level 1 (Direct AST evaluation note): {e}")
-
-    # 3. Level 2 Interval Branch-and-Bound
-    if args.level2:
-        print("==> Escalating to Level 2 (Interval Branch-and-Bound Formal Proof)...")
-        import mpmath
-        
-        def scalar_fn(coords):
-            x = coords[0]
-            try:
-                val = eval(sp_expr_str, {"x": x, "exp": np.exp, "tanh": np.tanh, "sin": np.sin, "cos": np.cos})
-                return float(val)
-            except Exception:
-                return float("nan")
-
-        def mp_interval_fn(boxes):
-            x = boxes[0]
-            try:
-                iv_ctx = {
-                    "x": x,
-                    "exp": getattr(mpmath.iv, "exp", mpmath.exp),
-                    "sin": getattr(mpmath.iv, "sin", mpmath.sin),
-                    "cos": getattr(mpmath.iv, "cos", mpmath.cos),
-                    "tan": getattr(mpmath.iv, "tan", mpmath.tan),
-                    "log": getattr(mpmath.iv, "log", mpmath.log),
-                    "sqrt": getattr(mpmath.iv, "sqrt", mpmath.sqrt),
-                }
-                if hasattr(mpmath.iv, "tanh"):
-                    iv_ctx["tanh"] = mpmath.iv.tanh
-                else:
-                    iv_ctx["tanh"] = lambda v: (mpmath.iv.exp(2*v) - 1) / (mpmath.iv.exp(2*v) + 1)
-                return eval(sp_expr_str, iv_ctx)
-            except Exception as e:
-                return mpmath.mpi(-1e6, 1e6)
-
-        res_l2 = verify_l2_ibnb(
-            scalar_fn=scalar_fn,
-            mp_interval_fn=mp_interval_fn,
-            bounds=[(-2.0, 2.0)],
-            violation_threshold=-100.0,
-            seek_violation_greater=False,
-            max_depth=6,
-            max_subdivisions=500,
-        )
-        print(f"Level 2 (IBnB Formal Proof) -> Certified: {res_l2.certified} | Subdivisions: {res_l2.subdivisions}")
-        if not res_l2.passed:
-            print(f"[!] Counterexample Found: {res_l2.counterexample}")
-            return 1
-            
-    print("[+] All requested verification levels cleared successfully.")
-    return 0
-
-
-def cmd_red_team(args: argparse.Namespace) -> int:
-    """Executes the Adversarial Red-Team Degeneracy Suite."""
-    print("==> Executing Adversarial Red-Team Degeneracy Audit...")
-    
-    # Create test model and evaluation dataset
-    model = nn.Sequential(nn.Linear(16, 32), nn.ReLU(), nn.Linear(32, 1))
-    X = torch.randn(64, 16)
-    y = X[:, :1] * 2.5 + torch.randn(64, 1) * 0.05
-    dataloader = [(X[i:i+8], y[i:i+8]) for i in range(0, 64, 8)]
-    
-    # Train candidate model to clear the baseline
-    opt = torch.optim.Adam(model.parameters(), lr=0.05)
-    for _ in range(40):
-        for bx, by in dataloader:
-            loss = nn.functional.mse_loss(model(bx), by)
-            opt.zero_grad()
-            loss.backward()
-            opt.step()
-    
-    suite = AdversarialRedTeamSuite(
-        epsilon_robust=0.01,
-        target_direction=TargetDirection.MINIMIZE,
-    )
-    result = suite.evaluate_null_models(
-        candidate_model=model,
-        eval_data=dataloader,
-        metric_fn=lambda p, t: float(nn.functional.mse_loss(p, t).item()),
-    )
-    
-    print(f"Candidate Score: {result.candidate_score:.6f}")
-    print(f"Null Models: {', '.join(f'{k}={v:.4f}' for k, v in result.null_scores.items())}")
-    print(f"Best Null Score: {result.min_null_score:.6f}")
-    print(f"Margin Over Best Null: {result.margin:.6f}")
-    print(f"Verdict: {result.verdict}")
-    
-    if not result.passed:
-        print(f"[!] Red-Team Audit FAILED: candidate margin {result.margin:.6f} <= {result.epsilon_robust}")
-        return 1
-        
-    print("[+] Red-Team Audit PASSED. Candidate is non-degenerate.")
-    return 0
-
-
-def cmd_inspect_metric(args: argparse.Namespace) -> int:
-    """Renders ANSI terminal heatmap and incentive surface metrics."""
-    metric_name = args.name or "cross_entropy_loss"
-    direction = TargetDirection.MINIMIZE if "loss" in metric_name.lower() else TargetDirection.MAXIMIZE
-    
-    scores = [1.85, 1.72, 1.65, 1.50, 1.48, 1.45, 1.42, 1.38, 1.35, 1.30]
-    contract = MetricScopeContract.create(
-        metric_name=metric_name,
-        observed_scores=scores,
-        theoretical_min=0.0,
-        theoretical_max=10.0,
-        null_max_score=4.0,
-        target_direction=direction,
-    )
-    
-    print(f"Metric Contract: {contract.metric_name} (Direction: {contract.target_direction.value})")
-    print(f"Effective Dynamic Range: [{contract.population_quantiles['p0']:.3f}, {contract.population_quantiles['p100']:.3f}]")
-    print(f"Saturation Index: {contract.saturation_index:.3f} (Saturated: {contract.is_saturated})")
-    print(f"Degeneracy Risk Ratio: {contract.degeneracy_risk_ratio:.3f} (High Risk: {contract.is_high_degeneracy_risk})")
-    
-    print("\nIncentive Surface ANSI Heatmap (Learning Rate vs Weight Decay):")
-    x_vals = [1e-4, 3e-4, 1e-3, 3e-3, 1e-2]
-    y_vals = [0.0, 1e-4, 1e-3, 1e-2, 1e-1]
-    p0 = contract.population_quantiles["p0"]
-    grid = [[p0 + (i * 0.1 + j * 0.05) for j in range(5)] for i in range(5)]
-    
-    heatmap_str = generate_ansi_terminal_heatmap(
-        x_param="Learning Rate",
-        y_param="Weight Decay",
-        x_values=x_vals,
-        y_values=y_vals,
-        grid_data=grid,
-        title=f"Incentive Surface ({contract.metric_name})",
-    )
-    print(heatmap_str)
-    return 0
-
-
-def cmd_swarm(args: argparse.Namespace) -> int:
-    """Launches parallel multi-lane swarm research coordinator."""
-    goal = args.goal or "Optimize attention layer efficiency"
-    lanes = [lane.strip() for lane in args.lanes.split(",")]
-    
-    if getattr(args, "export_agy_specs", False):
-        coordinator = AgySwarmCoordinator(goal=goal)
-        specs = coordinator.export_agy_specs(lanes=lanes)
-        print(json.dumps(specs, indent=2))
+        lock = verify_bench_lock(bdir)
+        print(json.dumps({
+            "locked": True,
+            "benchmark_id": lock.benchmark_id,
+            "trust_grade": lock.trust_grade.value,
+            "approved_by": lock.approved_by_human,
+            "lock_signature": lock.lock_signature,
+        }, indent=2))
         return 0
+    except Exception as e:
+        print(json.dumps({"locked": False, "error": str(e)}, indent=2), file=sys.stderr)
+        return 1
 
-    print(f"==> Launching FRAME-AR Swarm Coordinator for Goal: '{goal}'")
-    print(f"==> Active Swarm Lanes: {lanes}")
-    
-    # Initialize components
-    falsification_memory = StructuralFalsificationMemory()
-    recomb_grammar = RecombinationLegalityGrammar()
-    lord_controller = LORDController(alpha=0.05)
-    accounting = SearchAccountingLedger()
-    
-    # 1. Swarm proposal generation across lanes
-    print("\n[Swarm Phase 1: Lane Proposal & Structural AST Audit]")
-    proposals = [
-        {"lane": "architecture", "title": "Sparse Local Window Attention", "code": "class WindowAttention(nn.Module): pass"},
-        {"lane": "objectives", "title": "Margin Contrastive Regularizer", "code": "def margin_loss(p, t): return F.relu(1.0 - p*t).mean()"},
-        {"lane": "optimization", "title": "Cosine Decay with Warmup", "code": "class CosineWarmup: pass"},
+
+def cmd_prepare_jail(args: argparse.Namespace) -> int:
+    """Populates an isolated /tmp jail directory with BRIEF.md, parent candidate.py, and meta.env."""
+    import shutil
+    ws = Path(args.workspace).resolve()
+    jail_dir = Path(args.jail_dir).resolve()
+    jail_dir.mkdir(parents=True, exist_ok=True)
+
+    # Ensure root node_0 is initialized
+    evaluator = FunnelEvaluator(ws, args.topic)
+    role_enum = OperatorRole(args.role) if getattr(args, "role", None) else None
+    res = generate_context_brief(
+        workspace_root=ws,
+        topic=args.topic,
+        parent_node_id=getattr(args, "parent", None),
+        operator_role=role_enum,
+    )
+
+    parent_id = res["parent_node_id"]
+    role_str = res["operator_role"]
+    dir_id = res["directive_id"] or ""
+
+    # 1. Write BRIEF.md
+    (jail_dir / "BRIEF.md").write_text(res["brief_markdown"], encoding="utf-8")
+
+    # 2. Copy parent candidate.py into jail
+    parent_code_path = evaluator.tree.get_node_code_path(parent_id)
+    shutil.copyfile(parent_code_path, jail_dir / "candidate.py")
+
+    # 3. Write shell-sourceable meta.env
+    stagnant_steps = evaluator.tree.get_steps_since_last_promotion()
+    unconsumed_dirs = len(evaluator.tree.list_directives(unconsumed_only=True))
+    meta_lines = [
+        f"PARENT_ID='{parent_id}'",
+        f"ROLE='{role_str}'",
+        f"DIRECTIVE_ID='{dir_id}'",
+        f"STAGNANT_STEPS='{stagnant_steps}'",
+        f"UNCONSUMED_DIRECTIVES='{unconsumed_dirs}'",
     ]
-    
-    for prop in proposals:
-        if prop["lane"] not in lanes:
-            continue
-        print(f"  Lane [{prop['lane']:12s}]: Proposing '{prop['title']}'")
-        is_blocked, record = falsification_memory.check_hard_filter(prop["code"])
-        accounting.record_entry(SearchStage.IDEA_PROPOSAL)
-        if is_blocked and record is not None:
-            print(f"    [X] Blocked by Falsification Memory: {record.reason}")
-            accounting.record_rejection(SearchStage.IDEA_PROPOSAL, reason=record.reason)
-        else:
-            print("    [✓] Cleared AST Falsification Filter")
-            accounting.record_pass(SearchStage.IDEA_PROPOSAL)
-            
-    # 2. Recombination Legality Audit
-    print("\n[Swarm Phase 2: Compositional Recombination Audit (A ⊕ B ⊕ D)]")
-    is_legal, viol_code, expl = recomb_grammar.validate_recombination(
-        model_spec={"output_activation": "linear"},
-        loss_spec={"name": "cross_entropy"},
-        optimizer_spec={"name": "adamw"},
-    )
-    if not is_legal:
-        print(f"  [X] Illegal Recombination: {viol_code} - {expl}")
-    else:
-        print("  [✓] Recombination Legality Confirmed: Architecture(linear) ⊕ Loss(cross_entropy) ⊕ Opt(adamw)")
-        
-    # 3. Two-Stage Group Sequential Screening
-    print("\n[Swarm Phase 3: Two-Stage Group Sequential Screening]")
-    screener = TwoStageScreeningController(rope_epsilon=0.05, target_direction=TargetDirection.MINIMIZE)
-    stage1 = screener.evaluate_stage1_futility(
-        baseline_scores={"s1": 2.10, "s2": 2.05, "s3": 2.15},
-        candidate_scores={"s1": 1.80, "s2": 1.75, "s3": 1.85},
-    )
-    print(f"  Stage 1 Futility Verdict: {stage1.status} (Mean Improvement: {stage1.mean_difference:.4f})")
-    
-    if stage1.proceed:
-        stage2 = screener.evaluate_stage2_confirmatory(
-            baseline_scores={"s1": 2.10, "s2": 2.05, "s3": 2.15, "s4": 2.00, "s5": 2.08},
-            candidate_scores={"s1": 1.80, "s2": 1.75, "s3": 1.85, "s4": 1.70, "s5": 1.78},
-            lord_controller=lord_controller,
-        )
-        p_val = stage2.details.get("p_value_rope", 0.0)
-        alpha_t = stage2.details.get("allocated_alpha_t", 0.0)
-        print(f"  Stage 2 Confirmatory Verdict: {stage2.status} (p-value: {p_val:.6f}, alpha_t: {alpha_t:.6f})")
-        print(f"  Confirmed Discovery: {stage2.proceed}")
-
-    print("\n[+] Swarm cycle completed successfully.")
+    (jail_dir / "meta.env").write_text("\n".join(meta_lines) + "\n", encoding="utf-8")
     return 0
 
 
-def cmd_run(args: argparse.Namespace) -> int:
-    """Executes end-to-end autonomous research run on a target goal until reached."""
-    goal = args.goal or "Optimize model efficiency and representation"
-    lanes = [l.strip() for l in args.lanes.split(",")] if hasattr(args, "lanes") and args.lanes else ["architecture", "objectives", "optimization", "features"]
-    max_iter = getattr(args, "max_iterations", 5)
-    target_imp = getattr(args, "target_improvement", 0.10)
-
-    if getattr(args, "export_agy_specs", False):
-        coordinator = AgySwarmCoordinator(goal=goal)
-        specs = coordinator.export_agy_specs(lanes=lanes)
-        print(json.dumps(specs, indent=2))
-        return 0
-
-    config = CampaignConfig(
-        goal=goal,
-        max_iterations=max_iter,
-        target_improvement=target_imp,
-        active_lanes=lanes,
-        verbose=True,
-    )
-    runner = AutonomousCampaignRunner(config)
-    result = runner.run_campaign()
-    return 0 if result.goal_reached or result.confirmed_discoveries > 0 else 1
-
-
-def cmd_kaggle(args: argparse.Namespace) -> int:
-    """Inspects Kaggle API credentials, rolling quota ledger, and remote connectivity."""
-    import time
-    from frame.runners.kaggle.credentials import load_kaggle_credentials
-    from frame.runners.kaggle.quota import KaggleQuotaLedger
-    from frame.runners.kaggle.client import KaggleClient
-
-    print("=" * 70)
-    print("FRAME-AR Tier 2: Kaggle Remote Engine Diagnostics")
-    print("=" * 70)
-
-    try:
-        creds = load_kaggle_credentials()
-        print("[✓] Credentials Loaded Successfully:")
-        print(f"    Username: {creds.username}")
-        print(f"    Source:   {creds.source}")
-    except Exception as e:
-        print(f"[!] Credential Resolution Failed: {e}")
+def cmd_smoke_check(args: argparse.Namespace) -> int:
+    """Runs Gate 0 (AST duplicate check + out-of-process 5s smoke test) without mutating MCTS state."""
+    ws = Path(args.workspace).resolve()
+    cand_path = Path(args.candidate).resolve()
+    if not cand_path.is_file():
+        print(f"Candidate file not found: {cand_path}", file=sys.stderr)
         return 1
 
-    ledger = KaggleQuotaLedger()
-    used_h = ledger.get_used_gpu_hours()
-    rem_h = ledger.get_remaining_gpu_hours()
-    print("\n[✓] Rolling 7-Day GPU Quota Ledger:")
-    print(f"    Weekly Limit:     {ledger.weekly_limit_hours:.1f} hours")
-    print(f"    Consumed (7-Day): {used_h:.2f} hours")
-    print(f"    Available:        {rem_h:.2f} hours")
-    print(f"    Ledger File:      {ledger.ledger_path}")
+    evaluator = FunnelEvaluator(ws, args.topic)
+    code_text = cand_path.read_text(encoding="utf-8")
 
-    # 1. Probe connectivity
-    if getattr(args, "check_online", False):
-        print("\n==> Probing Kaggle REST API Connectivity...")
-        try:
-            client = KaggleClient(credentials=creds, quota_ledger=ledger)
-            conn_info = client.check_connection()
-            print(f"[✓] Kaggle REST Authentication Accepted (User: {conn_info['username']})")
-            print("[+] Kaggle REST client fully operational.")
-        except Exception as e:
-            print(f"[!] Kaggle API probe failed: {e}")
-            return 1
+    # 1. Check AST duplicate against existing nodes
+    is_dup, dup_node, _, _ = evaluator.tree.check_duplicate_ast(code_text)
+    if is_dup and dup_node is not None:
+        print(
+            f"GATE0_AST_DUPLICATE: Candidate code is an exact canonical AST duplicate of existing node "
+            f"'{dup_node.node_id}' (status={dup_node.status.value}). You MUST make a structural or "
+            f"parametric change to candidate.py.",
+            file=sys.stderr,
+        )
+        return 2
 
-    # 2. List remote user kernels
-    if getattr(args, "list", False):
-        print(f"\n==> Listing kernels on Kaggle for user '{creds.username}'...")
-        try:
-            client = KaggleClient(credentials=creds, quota_ledger=ledger)
-            kernels = client.list_kernels(page_size=10)
-            print(f"[✓] Found {len(kernels)} kernels:")
-            for k in kernels:
-                ref = k.get("ref", "")
-                title = k.get("title", "")
-                last_run = k.get("lastRunTime", "N/A")
-                print(f"    • {ref:35s} | {title[:25]:25s} | {last_run}")
-        except Exception as e:
-            print(f"[!] Failed to list kernels: {e}")
-            return 1
+    # 2. Run out-of-process 5s Smoke Test
+    from frame.eval.sandbox import run_candidate_isolated
+    seed0 = evaluator.spec.pilot_seeds[0]
+    pub_smoke, sec_smoke = evaluator.harness.prepare_split(seed=seed0, split_tier="smoke")
+    smoke_res = run_candidate_isolated(
+        candidate_path=cand_path,
+        public_task=pub_smoke,
+        seed=seed0,
+        mode="smoke",
+        timeout_sec=min(15.0, evaluator.spec.timeout_sec),
+        forbidden_bench_dir=evaluator.bench_dir,
+    )
+    if not smoke_res.passed or smoke_res.candidate_output is None:
+        print(f"GATE0_SMOKE_CRASH:\n{smoke_res.error_message}", file=sys.stderr)
+        return 3
 
-    # 3. Bundle FRAME-AR source payload
-    if getattr(args, "bundle", None):
-        out_file = args.bundle
-        from frame.runners.kaggle.bundler import create_kaggle_bundle
-        script_content = "import frame\nprint('FRAME-AR Remote Kaggle Container Initialized successfully.')\n"
-        if getattr(args, "script", None) and os.path.isfile(args.script):
-            with open(args.script, "r", encoding="utf-8") as sf:
-                script_content = sf.read()
-        payload = create_kaggle_bundle(main_execution_script=script_content)
-        with open(out_file, "w", encoding="utf-8") as of:
-            of.write(payload)
-        print(f"\n[✓] Self-extracting FRAME-AR payload bundled to: {out_file} ({len(payload)} bytes)")
+    # Estimate full-split runtime multiplier (full split typically has ~4x episodes/iterations of smoke)
+    smoke_budget_sec = max(5.0, evaluator.spec.timeout_sec * 0.22)
+    if smoke_res.wall_clock_sec > smoke_budget_sec:
+        print(
+            f"GATE0_RUNTIME_PROJECTION_EXCEEDED: Smoke test took {smoke_res.wall_clock_sec:.2f}s "
+            f"(limit: {smoke_budget_sec:.2f}s for full-seed timeout_sec={evaluator.spec.timeout_sec:.1f}s). "
+            f"Your candidate will time out on the full training split in Gate 1! "
+            f"Vectorize your simulation/rollout loop or reduce population size / maxiter.",
+            file=sys.stderr,
+        )
+        return 5
 
-    # 4. Check kernel status
-    if getattr(args, "status", None):
-        target_slug = args.status
-        print(f"\n==> Fetching status for kernel '{target_slug}'...")
-        try:
-            client = KaggleClient(credentials=creds, quota_ledger=ledger)
-            st_res = client.get_kernel_status(target_slug)
-            print(f"    Status:          {st_res.get('status')}")
-            if st_res.get("failureMessage"):
-                print(f"    Failure Message: {st_res.get('failureMessage')}")
-        except Exception as e:
-            print(f"[!] Failed to query kernel status: {e}")
-            return 1
+    try:
+        scored = evaluator.harness.score_candidate_output(
+            smoke_res.candidate_output, sec_smoke, seed=seed0, split_tier="smoke"
+        )
+        val = float(scored["primary_metric"])
+        if not __import__("numpy").isfinite(val):
+            raise ValueError(f"Primary metric is non-finite ({val})")
+    except Exception as e:
+        print(f"GATE0_SMOKE_SCORING_ERROR:\n{e}", file=sys.stderr)
+        return 4
 
-    # 5. Download kernel output
-    if getattr(args, "output", None):
-        target_slug = args.output
-        dest_dir = getattr(args, "dest", None) or os.path.join(".frame", "kaggle_outputs", target_slug)
-        print(f"\n==> Downloading outputs for kernel '{target_slug}' to '{dest_dir}'...")
-        try:
-            client = KaggleClient(credentials=creds, quota_ledger=ledger)
-            saved = client.download_kernel_output(target_slug, destination_dir=dest_dir)
-            print(f"    Downloaded {len(saved)} files:")
-            for fname, fpath in saved.items():
-                print(f"      - {fname}: {fpath}")
-        except Exception as e:
-            print(f"[!] Failed to download kernel output: {e}")
-            return 1
-
-    print("=" * 70)
+    print(f"GATE0_SMOKE_OK: metric={val:.5f} ({smoke_res.wall_clock_sec:.2f}s)")
     return 0
+
+
+def cmd_extract_code(args: argparse.Namespace) -> int:
+    """Checks if candidate.py was modified in-place on disk, or extracts a fenced Python block from stdout."""
+    import re
+    cand_path = Path(args.candidate).resolve()
+    backup_path = Path(args.backup).resolve()
+    stdout_path = Path(args.stdout_log).resolve()
+
+    # 1. Primary path: agy modified candidate.py in-place using its file edit tool
+    if cand_path.is_file() and backup_path.is_file():
+        if cand_path.read_text(encoding="utf-8").strip() != backup_path.read_text(encoding="utf-8").strip():
+            print("IN_PLACE_MODIFIED")
+            return 0
+
+    # 2. Fallback path: extract ```python ... ``` block from agy_stdout.log
+    if not stdout_path.is_file():
+        print("NO_STDOUT_LOG", file=sys.stderr)
+        return 1
+
+    raw_out = stdout_path.read_text(encoding="utf-8", errors="replace")
+    if not raw_out.strip():
+        print("EMPTY_STDOUT_LOG", file=sys.stderr)
+        return 1
+
+    blocks = re.findall(r"```[ \t]*(?:python[0-9.]*|py)?[ \t]*\r?\n(.*?)```", raw_out, flags=re.DOTALL | re.IGNORECASE)
+    for block in reversed(blocks):
+        if "def run_experiment" in block:
+            cand_path.write_text(block.strip() + "\n", encoding="utf-8")
+            print("EXTRACTED_FENCED_BLOCK")
+            return 0
+
+    if "def run_experiment" in raw_out and "```" not in raw_out:
+        lines = raw_out.splitlines()
+        start_idx = 0
+        for i, line in enumerate(lines):
+            if line.strip().startswith(("import ", "from ", "def ", '"""', "'''", "#")):
+                start_idx = i
+                break
+        extracted = "\n".join(lines[start_idx:]).strip() + "\n"
+        cand_path.write_text(extracted, encoding="utf-8")
+        print("EXTRACTED_RAW_PYTHON")
+        return 0
+
+    print("NO_MODIFICATION_DETECTED: NO_PYTHON_CODE_FOUND_IN_STDOUT", file=sys.stderr)
+    return 2
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Constructs the unified FRAME-AR CLI argument parser."""
-    parser = argparse.ArgumentParser(
-        prog="frame",
-        description="FRAME-AR: Autonomous Scientific Discovery & Verification Platform",
-    )
-    subparsers = parser.add_subparsers(dest="command", help="Available FRAME-AR subcommands")
-    
-    # frame kaggle
-    p_kaggle = subparsers.add_parser("kaggle", help="Inspect Kaggle credentials and 7-day rolling GPU quota")
-    p_kaggle.add_argument("--check-online", action="store_true", help="Probe remote Kaggle REST API connectivity")
-    p_kaggle.add_argument("--list", action="store_true", help="List recent Kaggle kernels for user")
-    p_kaggle.add_argument("--bundle", type=str, help="Package FRAME source into self-extracting payload file")
-    p_kaggle.add_argument("--script", type=str, help="Optional script file to embed into bundle")
-    p_kaggle.add_argument("--status", type=str, help="Check status of a remote Kaggle kernel slug")
-    p_kaggle.add_argument("--output", type=str, help="Download output files of a remote Kaggle kernel slug")
-    p_kaggle.add_argument("--dest", type=str, help="Destination directory for downloaded outputs")
-    p_kaggle.set_defaults(func=cmd_kaggle)
-    
-    # frame run
-    p_run = subparsers.add_parser("run", help="Run end-to-end autonomous research campaign until goal reached")
-    p_run.add_argument("--goal", type=str, required=True, help="Research objective or hypothesis goal")
-    p_run.add_argument("--lanes", type=str, default="architecture,objectives,optimization,features", help="Active swarm lanes")
-    p_run.add_argument("--max-iterations", type=int, default=5, help="Maximum MCTS search iterations")
-    p_run.add_argument("--target-improvement", type=float, default=0.10, help="Relative improvement threshold to declare goal reached (e.g. 0.10 for 10 percent)")
-    p_run.add_argument("--export-agy-specs", action="store_true", help="Export invoke_subagent payload JSON for agy")
-    p_run.set_defaults(func=cmd_run)
-    
-    # frame swarm
-    p_swarm = subparsers.add_parser("swarm", help="Run multi-lane swarm research coordinator")
-    p_swarm.add_argument("--goal", type=str, default="Optimize attention layer efficiency", help="Research objective")
-    p_swarm.add_argument("--lanes", type=str, default="architecture,objectives,optimization,features", help="Active swarm lanes")
-    p_swarm.add_argument("--export-agy-specs", action="store_true", help="Export invoke_subagent payload JSON for agy")
-    p_swarm.set_defaults(func=cmd_swarm)
-    
-    # frame verify-math
-    p_math = subparsers.add_parser("verify-math", help="Run tiered symbolic-numeric verification")
-    p_math.add_argument("--expr", type=str, required=True, help="Mathematical expression to verify (e.g. 'x / (1 + torch.exp(-x))')")
-    p_math.add_argument("--level2", action="store_true", help="Escalate to Level 2 Interval Branch-and-Bound")
-    p_math.set_defaults(func=cmd_verify_math)
-    
-    # frame red-team
-    p_red = subparsers.add_parser("red-team", help="Run adversarial red-team degeneracy probes")
-    p_red.set_defaults(func=cmd_red_team)
-    
-    # frame inspect-metric
-    p_metric = subparsers.add_parser("inspect-metric", help="Inspect incentive surface and render ANSI heatmap")
-    p_metric.add_argument("--name", type=str, default="cross_entropy_loss", help="Metric identifier")
-    p_metric.set_defaults(func=cmd_inspect_metric)
-    
-    # frame status
-    p_status = subparsers.add_parser("status", help="Inspect MCTS epistemic state and accounting ledger")
-    p_status.set_defaults(func=cmd_status)
-    
+    parser = argparse.ArgumentParser(prog="frame", description="FRAME-AR v2 Autonomous Research Engine")
+    parser.add_argument("--workspace", default=".", help="Workspace root directory")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    # 1. `frame bench` subcommands
+    p_bench = sub.add_parser("bench", help="Phase 0 Benchmark Synthesis, Audit & Lock")
+    bench_sub = p_bench.add_subparsers(dest="bench_cmd", required=True)
+
+    b_init = bench_sub.add_parser("init", help="Initialize benchmark from domain template")
+    b_init.add_argument("--topic", required=True)
+    b_init.add_argument("--domain", choices=["kaggle_tabular", "rl_control"], required=True)
+
+    b_ver = bench_sub.add_parser("verify", help="Run 6-check benchmark meta-verification")
+    b_ver.add_argument("--topic", required=True)
+
+    b_s1_exp = bench_sub.add_parser("export-stage1", help="Export Stage 1 blind review packet")
+    b_s1_exp.add_argument("--topic", required=True)
+
+    b_s1_rec = bench_sub.add_parser("record-stage1", help="Record Stage 1 blind review from Gemini or Claude")
+    b_s1_rec.add_argument("--topic", required=True)
+    b_s1_rec.add_argument("--model", choices=["gemini", "claude"], required=True)
+    b_s1_rec.add_argument("--text", default=None)
+    b_s1_rec.add_argument("--file", default=None)
+
+    b_s2_exp = bench_sub.add_parser("export-stage2", help="Export Stage 2 cross-critique packet")
+    b_s2_exp.add_argument("--topic", required=True)
+    b_s2_exp.add_argument("--model", choices=["gemini", "claude"], required=True)
+
+    b_s2_rec = bench_sub.add_parser("record-stage2", help="Record Stage 2 cross-critique from Gemini or Claude")
+    b_s2_rec.add_argument("--topic", required=True)
+    b_s2_rec.add_argument("--model", choices=["gemini", "claude"], required=True)
+    b_s2_rec.add_argument("--text", default=None)
+    b_s2_rec.add_argument("--file", default=None)
+
+    b_app = bench_sub.add_parser("approve", help="Human Gate: Approve benchmark and create bench.lock")
+    b_app.add_argument("--topic", required=True)
+    b_app.add_argument("--reviewer", required=True)
+    b_app.add_argument("--notes", default="")
+    b_app.add_argument("--require-committee", action="store_true")
+
+    # Inside bench_sub in build_parser():
+    b_chk = bench_sub.add_parser("check-lock", help="Verify cryptographic bench.lock integrity")
+    b_chk.add_argument("--topic", type=str, required=True)
+    b_chk.set_defaults(func=cmd_bench_check_lock)
+
+    # 2. `frame brief`
+    p_brief = sub.add_parser("brief", help="Generate leak-free Context Firewall Brief for a subagent")
+    p_brief.add_argument("--topic", required=True)
+    p_brief.add_argument("--parent", default=None)
+    p_brief.add_argument("--role", choices=[r.value for r in OperatorRole], default=None)
+
+    # 3. `frame step`
+    p_step = sub.add_parser("step", help="Execute 4-Gate Verification Funnel on a candidate script")
+    p_step.add_argument("--topic", required=True)
+    p_step.add_argument("--candidate", required=True)
+    p_step.add_argument("--parent", default=None)
+    p_step.add_argument("--role", choices=[r.value for r in OperatorRole], default=OperatorRole.SPEC_IMPLEMENTATION.value)
+    p_step.add_argument("--edge-type", choices=[e.value for e in EdgeType], default=EdgeType.ATOMIC_TRANSITION.value)
+    p_step.add_argument("--title", default="")
+    p_step.add_argument("--directive", default=None)
+
+    # 4. `frame inject`
+    p_inj = sub.add_parser("inject", help="Enqueue a priority Human/Frontier hypothesis onto any node")
+    p_inj.add_argument("--topic", required=True)
+    p_inj.add_argument("--parent", required=True)
+    p_inj.add_argument("--spec", required=True)
+    p_inj.add_argument("--role", choices=[r.value for r in OperatorRole], default=OperatorRole.SPEC_IMPLEMENTATION.value)
+    p_inj.add_argument("--priority", type=int, default=0)
+    p_inj.add_argument("--author", default="human_or_frontier")
+
+    # 5. `frame abort`
+    p_abt = sub.add_parser("abort", help="Preempt an active worker PID and optionally inject a replacement spec")
+    p_abt.add_argument("--topic", required=True)
+    p_abt.add_argument("--node", required=True)
+    p_abt.add_argument("--inject-spec", default=None)
+
+    # 6. `frame swarm`
+    p_swm = sub.add_parser("swarm", help="Export 4 mechanical operator briefs for parallel Flash subagents")
+    p_swm.add_argument("--topic", required=True)
+
+    # 7. `frame status`
+    p_sts = sub.add_parser("status", help="Inspect MCTS campaign tree, Incumbent M*, and directive queue")
+    p_sts.add_argument("--topic", required=True)
+
+    # 8. `frame vault-eval`
+    p_vlt = sub.add_parser("vault-eval", help="Evaluate Incumbent M* on the sealed Vault-Holdout split")
+    p_vlt.add_argument("--topic", required=True)
+    p_vlt.add_argument("--node", default=None)
+
+    # Top-level subparsers in build_parser():
+    p_jail = sub.add_parser("prepare-jail", help="Populate isolated /tmp jail with BRIEF.md and candidate.py")
+    p_jail.add_argument("--topic", type=str, required=True)
+    p_jail.add_argument("--jail-dir", type=str, required=True)
+    p_jail.add_argument("--parent", type=str, default=None)
+    p_jail.add_argument("--role", type=str, default=None)
+    p_jail.set_defaults(func=cmd_prepare_jail)
+
+    p_smoke = sub.add_parser("smoke-check", help="Run stateless Gate 0 AST + 5s smoke check on a candidate")
+    p_smoke.add_argument("--topic", type=str, required=True)
+    p_smoke.add_argument("--candidate", type=str, required=True)
+    p_smoke.set_defaults(func=cmd_smoke_check)
+
+    p_ext = sub.add_parser("extract-code", help="Verify in-place edit or extract Python block from worker stdout")
+    p_ext.add_argument("--candidate", type=str, required=True)
+    p_ext.add_argument("--backup", type=str, required=True)
+    p_ext.add_argument("--stdout-log", type=str, required=True)
+    p_ext.set_defaults(func=cmd_extract_code)
+
     return parser
 
 
-def main() -> None:
+def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(0)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if hasattr(args, "func"):
-        sys.exit(args.func(args))
-    else:
-        parser.print_help()
-        sys.exit(1)
+        return args.func(args)
+    ws = Path(args.workspace).resolve()
+
+    if args.cmd == "bench":
+        bdir = get_bench_dir(ws, args.topic)
+        if args.bench_cmd == "init":
+            path = init_benchmark(ws, args.topic, args.domain)
+            print(json.dumps({"status": "initialized", "bench_dir": str(path)}, indent=2))
+            return 0
+        if args.bench_cmd == "verify":
+            rep = verify_benchmark(bdir)
+            rev_md = generate_human_review_markdown(bdir)
+            print(rep.model_dump_json(indent=2))
+            print(f"\n[Review Card Generated]: {rev_md}")
+            return 0 if rep.trust_grade.value != "FAIL" else 1
+        if args.bench_cmd == "export-stage1":
+            p = export_stage1_blind_packet(bdir)
+            print(json.dumps({"stage1_blind_packet": str(p)}, indent=2))
+            return 0
+        if args.bench_cmd == "record-stage1":
+            txt = _read_text_arg(args.text, args.file)
+            rec = record_stage1_review(bdir, args.model, txt)
+            print(rec.model_dump_json(indent=2))
+            return 0
+        if args.bench_cmd == "export-stage2":
+            p = export_stage2_cross_packet(bdir, args.model)
+            print(json.dumps({"stage2_cross_packet": str(p)}, indent=2))
+            return 0
+        if args.bench_cmd == "record-stage2":
+            txt = _read_text_arg(args.text, args.file)
+            rec = record_stage2_critique(bdir, args.model, txt)
+            print(rec.model_dump_json(indent=2))
+            return 0
+        if args.bench_cmd == "approve":
+            lock = approve_benchmark(bdir, args.reviewer, args.notes, args.require_committee)
+            print(lock.model_dump_json(indent=2))
+            return 0
+
+    if args.cmd == "brief":
+        role = OperatorRole(args.role) if args.role else None
+        pkt = generate_context_brief(ws, args.topic, parent_node_id=args.parent, operator_role=role)
+        print(pkt["brief_markdown"])
+        return 0
+
+    if args.cmd == "step":
+        funnel = FunnelEvaluator(ws, args.topic)
+        rec = funnel.evaluate_step(
+            candidate_path=Path(args.candidate),
+            parent_id=args.parent,
+            operator_role=OperatorRole(args.role),
+            edge_type=EdgeType(args.edge_type),
+            title=args.title,
+            directive_id=args.directive,
+        )
+        # Enforce 1-bit Confirmatory telemetry privacy: mask raw per-seed confirmatory scores in stdout receipt
+        receipt = {
+            "node_id": rec.node_id,
+            "parent_id": rec.parent_id,
+            "status": rec.status.value,
+            "promoted": rec.promoted,
+            "incumbent_node_id": funnel.tree.incumbent_node_id,
+            "pilot_primary_mean": rec.pilot_primary_mean,
+            "pilot_primary_iqm": rec.pilot_primary_iqm,
+            "pilot_delta_vs_parent": rec.pilot_delta_vs_parent,
+            "guardrails_passed": rec.guardrails_passed,
+            "failed_guardrails": rec.failed_guardrails,
+            "dev_diagnostics": rec.dev_diagnostics,
+            "confirmatory_verdict": (
+                {
+                    "lord_step": rec.confirmatory_step,
+                    "directional_effect": rec.confirmatory_effect,
+                    "p_value_rope": rec.p_value_rope,
+                    "allocated_alpha_t": rec.allocated_alpha_t,
+                    "is_discovery": rec.promoted,
+                }
+                if rec.confirmatory_step is not None
+                else None
+            ),
+            "error_traceback": rec.error_traceback,
+            "wall_clock_sec": round(rec.wall_clock_sec, 3),
+        }
+        print(json.dumps(receipt, indent=2))
+        return 0
+
+    if args.cmd == "inject":
+        FunnelEvaluator(ws, args.topic)
+        tree = CampaignTree(ws, args.topic)
+        ticket = tree.enqueue_directive(
+            parent_node_id=args.parent,
+            hypothesis_spec=args.spec,
+            operator_role=OperatorRole(args.role),
+            priority=args.priority,
+            author=args.author,
+        )
+        print(ticket.model_dump_json(indent=2))
+        return 0
+
+    if args.cmd == "abort":
+        tree = CampaignTree(ws, args.topic)
+        res = tree.abort_running_node(args.node, inject_replacement_spec=args.inject_spec)
+        print(json.dumps(res, indent=2))
+        return 0
+
+    if args.cmd == "swarm":
+        pkts = export_swarm_specs(ws, args.topic)
+        print(json.dumps({"exported_operator_briefs": len(pkts)}, indent=2))
+        return 0
+
+    if args.cmd == "status":
+        tree = CampaignTree(ws, args.topic)
+        summary = {
+            "topic": tree.topic,
+            "incumbent_single_model_M_star": tree.incumbent_node_id,
+            "best_blend_node_id": tree.best_blend_node_id,
+            "total_nodes": len(tree.nodes),
+            "queued_directives": [d.model_dump(mode="json") for d in tree.get_queued_directives()],
+            "nodes": [
+                {
+                    "node_id": n.node_id,
+                    "parent_id": n.parent_id,
+                    "role": n.operator_role.value,
+                    "status": n.status.value,
+                    "pilot_mean": n.pilot_primary_mean,
+                    "pilot_iqm": n.pilot_primary_iqm,
+                    "promoted": n.promoted,
+                }
+                for n in tree.nodes.values()
+            ],
+        }
+        print(json.dumps(summary, indent=2))
+        return 0
+
+    if args.cmd == "vault-eval":
+        funnel = FunnelEvaluator(ws, args.topic)
+        rep = funnel.evaluate_vault_holdout(node_id=args.node)
+        print(json.dumps(rep, indent=2))
+        return 0
+
+    return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
