@@ -27,7 +27,7 @@
 - [CLI Reference](#-cli-reference)
 - [Repository Layout](#-repository-layout)
 - [Verification & Testing](#-verification--testing)
-- [Legacy v1 Archive](#-legacy-v1-archive)
+- [Legacy v1: Out of Support & Deprecated](#-legacy-v1-out-of-support--deprecated)
 - [License](#-license)
 
 ---
@@ -219,10 +219,10 @@ Whenever a candidate combines multiple model policies or predictions, it must pa
 
 FRAME-AR has undergone a comprehensive evolutionary overhaul to transition from an experimental in-process prototype to a production-grade, out-of-process autonomous platform:
 
-### 1. The Legacy v1 Monolith (Archived at `v1.0.0-archive`, Commit `1a55a63`)
+### 1. The Legacy v1 Monolith (Archived at `v1.0.0-archive`, Commit `1a55a63`) — *Out of Support*
 - **Architecture**: In-process multi-agent system combining symbolic math engines (L0 SymPy, L1 IBP, L2 IBnB), TAPAScore calculation, and Kaggle runners.
-- **Core Limitation**: Lack of process isolation allowed agents to introspect evaluation memory, leak holdout splits, and deadlock inside complex in-process loops.
-- **Preservation**: Archived with 793 passing tests in `ARCHIVE_V1_MANIFEST.md` and `archive/v1-main`.
+- **Out of Support & Not Recommended to Restore**: Legacy v1 is permanently deprecated. Restoring or executing v1 is strictly discouraged due to severe empirical result conflicts, in-process benchmark contamination, and telemetry collisions.
+- **Preservation**: Frozen as an immutable historical artifact in `ARCHIVE_V1_MANIFEST.md` and `archive/v1-main`. Do not mix with v2.5+ campaigns.
 
 ### 2. The v2.0 Out-of-Process Paradigm
 - Completely rewrote the core engine with strict **Separation of Powers**.
@@ -432,14 +432,24 @@ Test coverage includes:
 
 ---
 
-## 🏛️ Legacy v1 Archive
+## ⚠️ Legacy v1: Out of Support & Deprecated
 
-The original monolithic v1 architecture of FRAME-AR is permanently archived:
+> [!CAUTION]
+> **OUT OF SUPPORT — RESTORATION STRICTLY NOT RECOMMENDED**
+> Legacy FRAME-AR v1 (`v1.0.0-archive` / commit `1a55a63`) is permanently deprecated, obsolete, and out of support. **Restoring or deploying the v1 archive is strictly not recommended due to severe empirical result conflicts, evaluation metric divergence, and state contamination.**
+
+### Why v1 Must Not Be Restored (Result Conflict Vectors):
+1. **In-Process Benchmark Leakage**: Because v1 evaluated candidates inside the parent Python runtime without process isolation or CPython audit sandboxing, agents could introspect test harness data structures and leak holdout splits into feature scalers, producing inflated, irreproducible scores that directly conflict with out-of-sample reality.
+2. **Telemetry & FDR Conflation**: Multi-edge transitions in v1 were susceptible to merged telemetry collisions where test statistics from different hypotheses collided in the in-process ledger, yielding corrupted $p$-values and invalid false discovery accounting.
+3. **Blend / Stacking Illusions**: v1 certified ensembles against naive root baselines rather than the reigning Incumbent Best Single Model ($M^*$), generating conflicting empirical claims that fail under the v2.5+ Blend Edge Protocol.
+4. **Environment Deadlocks**: The monolithic combination of SymPy, interval solvers, and Kaggle runners led to unresolvable dependency conflicts and non-deterministic agent deadlocks.
+
+### Historical Archive Reference
+The legacy v1 state is preserved solely as a frozen, read-only historical record:
 - **Git Commit**: `1a55a63`
 - **Git Tag**: `v1.0.0-archive`
 - **Preservation Branch**: `archive/v1-main`
-- **Verification Status**: 793 passed unit and integration tests.
-- **Details**: See [ARCHIVE_V1_MANIFEST.md](ARCHIVE_V1_MANIFEST.md) for restoration procedures.
+- **Manifest**: Documented in [ARCHIVE_V1_MANIFEST.md](ARCHIVE_V1_MANIFEST.md) *(for historical reference only; do not unpack into active v2.5+ environments)*.
 
 ---
 

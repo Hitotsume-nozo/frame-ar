@@ -1,5 +1,9 @@
 # FRAME-AR v1 Preserved State Manifest
 
+> [!CAUTION]
+> **OUT OF SUPPORT — RESTORATION STRICTLY NOT RECOMMENDED**
+> This manifest preserves the legacy in-process v1 codebase for historical archival purposes only. **Restoring this archive into an active workspace is strictly not recommended due to severe result conflicts, in-process benchmark contamination, and telemetry collisions.** Use FRAME-AR v2.5+ for all empirical research and active campaigns.
+
 - **Archive Date**: 2026-10-29
 - **Preserved Git Commit**: `1a55a63` (feat(core): initial release of FRAME-AR autonomous research platform)
 - **Git Tag**: `v1.0.0-archive`
